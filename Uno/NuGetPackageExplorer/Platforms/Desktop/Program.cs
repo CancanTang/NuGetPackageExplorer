@@ -1,20 +1,20 @@
-﻿using Uno.UI.Hosting;
+﻿using Uno.UI.Runtime.Skia;
 
 namespace PackageExplorer;
 
-internal class Program
+public class Program
 {
     [STAThread]
     public static void Main(string[] args)
     {
         App.InitializeLogging();
 
-        var host = UnoPlatformHostBuilder.Create()
-            .App(static () => new App())
+        var host = SkiaHostBuilder.Create()
+            .App(() => new App())
             .UseX11()
             .UseLinuxFrameBuffer()
             .UseMacOS()
-            .UseWin32()
+            .UseWindows()
             .Build();
 
         host.Run();

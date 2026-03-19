@@ -17,9 +17,10 @@ namespace PackageExplorerViewModel
 
         public EditableFrameworkReferenceGroup(FrameworkReferenceGroup frameworkReferenceGroup)
         {
-            System.ArgumentNullException.ThrowIfNull(frameworkReferenceGroup);
+            if (frameworkReferenceGroup is null)
+                throw new System.ArgumentNullException(nameof(frameworkReferenceGroup));
             _targetFramework = frameworkReferenceGroup.TargetFramework;
-            FrameworkReferences = new ObservableCollection<string>(frameworkReferenceGroup.FrameworkReferences.Select(static fr => fr.Name));
+            FrameworkReferences = new ObservableCollection<string>(frameworkReferenceGroup.FrameworkReferences.Select(fr => fr.Name));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -42,7 +43,7 @@ namespace PackageExplorerViewModel
 
         public FrameworkReferenceGroup AsReadOnly()
         {
-            return new FrameworkReferenceGroup(TargetFramework, FrameworkReferences.Select(static fr => new FrameworkReference(fr)));
+            return new FrameworkReferenceGroup(TargetFramework, FrameworkReferences.Select(fr => new FrameworkReference(fr)));
         }
 
         public ObservableCollection<string> FrameworkReferences { get; }

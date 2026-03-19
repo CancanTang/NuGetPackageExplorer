@@ -14,7 +14,8 @@ namespace NuGetPe
         public static string? GetOptionalAttributeValue(this XElement element, string localName,
                                                        string? namespaceName = null)
         {
-            ArgumentNullException.ThrowIfNull(element);
+            if (element is null)
+                throw new ArgumentNullException(nameof(element));
 
             XAttribute? attr;
             if (string.IsNullOrEmpty(namespaceName))
@@ -33,7 +34,8 @@ namespace NuGetPe
         public static string? GetOptionalElementValue(this XElement element, string localName,
                                                      string? namespaceName = null)
         {
-            ArgumentNullException.ThrowIfNull(element);
+            if (element is null)
+                throw new ArgumentNullException(nameof(element));
             XElement? child;
             if (string.IsNullOrEmpty(namespaceName))
             {
@@ -48,7 +50,8 @@ namespace NuGetPe
 
         public static IEnumerable<XElement> ElementsNoNamespace(this XContainer container, string localName)
         {
-            ArgumentNullException.ThrowIfNull(container);
+            if (container is null)
+                throw new ArgumentNullException(nameof(container));
             return container.Elements().Where(e => e.Name.LocalName == localName);
         }
 
@@ -60,7 +63,8 @@ namespace NuGetPe
         // REVIEW: We can use a stack if the perf is bad for Except and MergeWith
         public static XElement Except(this XElement source, XElement target)
         {
-            ArgumentNullException.ThrowIfNull(source);
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
             if (target is null)
             {
                 return source;
@@ -104,7 +108,8 @@ namespace NuGetPe
         public static XElement MergeWith(this XElement source, XElement? target,
                                          IDictionary<XName, Action<XElement, XElement>>? nodeActions)
         {
-            ArgumentNullException.ThrowIfNull(source);
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
 
             if (target == null)
             {
@@ -168,8 +173,8 @@ namespace NuGetPe
             if (leftExactMatches == rightExactMatches)
             {
                 // Then check which names match
-                var leftNameMatches = CountMatches(left, target, static (a, b) => a.Name == b.Name);
-                var rightNameMatches = CountMatches(right, target, static (a, b) => a.Name == b.Name);
+                var leftNameMatches = CountMatches(left, target, (a, b) => a.Name == b.Name);
+                var rightNameMatches = CountMatches(right, target, (a, b) => a.Name == b.Name);
 
                 return rightNameMatches.CompareTo(leftNameMatches);
             }
@@ -188,7 +193,7 @@ namespace NuGetPe
         private static bool HasConflict(XElement source, XElement target)
         {
             // Get all attributes as name value pairs
-            var sourceAttr = source.Attributes().ToDictionary(static a => a.Name, static a => a.Value);
+            var sourceAttr = source.Attributes().ToDictionary(a => a.Name, a => a.Value);
             // Loop over all the other attributes and see if there are
             foreach (var targetAttr in target.Attributes())
             {
@@ -203,8 +208,10 @@ namespace NuGetPe
 
         public static void RemoveAttributes(this XElement element, Func<XAttribute, bool> condition)
         {
-            ArgumentNullException.ThrowIfNull(element);
-            ArgumentNullException.ThrowIfNull(condition);
+            if (element is null)
+                throw new ArgumentNullException(nameof(element));
+            if (condition is null)
+                throw new ArgumentNullException(nameof(condition));
 
             element.Attributes()
                 .Where(condition)

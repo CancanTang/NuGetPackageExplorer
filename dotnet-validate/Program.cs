@@ -1,63 +1,57 @@
-﻿using System.CommandLine;
-
+using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
-
 using NuGet.Versioning;
 
 namespace NuGetPe
 {
-    internal sealed class Program
+    internal class Program
     {
         // Standard exit codes, see https://man.openbsd.org/sysexits and https://docs.microsoft.com/en-us/cpp/c-runtime-library/exit-success-exit-failure
 
-        private const int EXIT_SUCCESS = 0;
-        private const int EXIT_FAILURE = 1;
+        private const int EXIT_SUCCESS   =  0;
+        private const int EXIT_FAILURE   =  1;
         private const int EX_UNAVAILABLE = 69; // A service is unavailable. This can occur if a support program or file does not exist. This can also be used as a catch-all message when something you wanted to do doesn't work, but you don't know why.
-        private const int EX_SOFTWARE = 70; // An internal software error has been detected. This should be limited to non-operating system related errors if possible.
+        private const int EX_SOFTWARE    = 70; // An internal software error has been detected. This should be limited to non-operating system related errors if possible.
 
 
         private static async Task<int> Main(string[] args)
         {
-            var fileArgument = new Argument<string>("file")
-            {
-                Description = "Package to validate."
-            };
-
             var localCommand = new Command("local", "A local package")
             {
-                fileArgument
-            };
-
-            var packageIdArgument = new Argument<string>("packageId")
-            {
-                Description = "Package Id"
+                new Argument<string>("file", "Package to validate.")
             };
 
             var remoteCommand = new Command("remote", "A package on a NuGet Feed")
             {
-                packageIdArgument,
-                new Option<NuGetVersion?>("--version","-v")
+                new Argument<string>("packageId", "Package Id"),
+                new Option<NuGetVersion?>(
+                    new[] { "--version", "-v" },
+                    parseArgument: arg =>
                     {
-                        Description = "Package version. Defaults to latest.",
-                        CustomParser = arg =>
+                        if (arg.Tokens.Count > 0 && NuGetVersion.TryParse(arg.Tokens[0].Value, out var version))
                         {
-                            if (arg.Tokens.Count > 0 && NuGet.Versioning.NuGetVersion.TryParse(arg.Tokens[0].Value, out var version))
-                            {
-                                return version;
-                            }
-                            else
-                            {
-                                arg.AddError("The provided version string could not be parsed." +
-                                     Environment.NewLine +
-                                    "See https://docs.microsoft.com/en-us/nuget/concepts/package-versioning");
-                                return null;
-                            }
+                            return version;
                         }
-                },
-                new Option<DirectoryInfo?>( "--nuget-config-directory", "-d")
-                {
-                    CustomParser = arg =>
+                        else
+                        {
+                            arg.ErrorMessage = "The provided version string could not be parsed." +
+                                Environment.NewLine +
+                                "See https://docs.microsoft.com/en-us/nuget/concepts/package-versioning";
+                            return null;
+                        }
+                    },
+                    description: "Package version. Defaults to latest."),
+                new Option<DirectoryInfo?>(
+                    new[] { "--nuget-config-directory", "-d" },
+                    parseArgument: arg =>
                     {
                         if (arg.Tokens.Count > 0)
                         {
@@ -67,15 +61,13 @@ namespace NuGetPe
                             {
                                 return directoryInfo;
                             }
-
-                            arg.AddError($"The NuGet configuration directory that was specified must exist: {directory}");
+                            arg.ErrorMessage = $"The NuGet configuration directory that was specified must exist: {directory}";
                         }
                         return null;
                     },
-                    Description = "The directory from where the NuGet configuration is loaded. " +
+                    description: "The directory from where the NuGet configuration is loaded. " +
                                  "This is used to automatically detect NuGet package sources and the location of the global‑packages directory. " +
-                                 "Defaults to the current directory."
-                }
+                                 "Defaults to the current directory."),
             };
 
             var rootCommand = new RootCommand()
@@ -87,12 +79,10 @@ namespace NuGetPe
                 }
             };
 
+            localCommand.Handler = CommandHandler.Create<string>(RunLocalCommand);
+            remoteCommand.Handler = CommandHandler.Create<string, NuGetVersion?, DirectoryInfo?>(RunRemoteCommand);
 
-            localCommand.SetAction(async (r) => await RunLocalCommand(r.GetRequiredValue(fileArgument)));
-            remoteCommand.SetAction(async (r) => await RunRemoteCommand(r.GetRequiredValue(packageIdArgument), r.GetValue<NuGetVersion?>("--version"), r.GetValue<DirectoryInfo?>("--nuget-config-directory")));
-
-
-            return await rootCommand.Parse(args).InvokeAsync().ConfigureAwait(false);
+            return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
         }
 
         private static async Task<int> RunLocalCommand(string file)
@@ -207,7 +197,7 @@ namespace NuGetPe
             if (errorMessage != null)
             {
                 const int indent = 4;
-                errorString = Environment.NewLine + string.Join(Environment.NewLine, errorMessage.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static e => new string(' ', indent) + e));
+                errorString = Environment.NewLine + string.Join(Environment.NewLine, errorMessage.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(e => new string(' ', indent) + e));
             }
             else
             {

@@ -4,7 +4,7 @@ using System.Windows.Data;
 
 namespace PackageExplorer
 {
-    internal sealed class IntegerToBooleanConverter : IValueConverter
+    internal class IntegerToBooleanConverter : IValueConverter
     {
         #region IValueConverter Members
 

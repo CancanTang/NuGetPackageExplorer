@@ -11,9 +11,9 @@ using NuGetPe;
 
 namespace PackageExplorer
 {
-    public static class PackageIconConverterHelper
+    public class PackageIconConverterHelper
     {
-        private static readonly IconUrlConverterHelper IconUrlConverter = new();
+        private static readonly IconUrlConverterHelper IconUrlConverter = new IconUrlConverterHelper();
 
         public static BitmapSource? ConvertToImage(PackageViewModel package, string iconOrIconUrl)
         {

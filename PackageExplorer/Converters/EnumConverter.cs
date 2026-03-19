@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 
 #if HAS_UNO || USE_WINUI
 using Microsoft.UI.Xaml;
@@ -14,16 +15,16 @@ using _CultureInfo = System.Globalization.CultureInfo;
 
 namespace PackageExplorer
 {
-    public partial class EnumConverter : IValueConverter
+    public class EnumConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             if (value == null) return DependencyProperty.UnsetValue;
 
             return GetDescription((Enum)value);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             return value;
         }

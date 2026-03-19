@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-
+using System.IO;
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 #if HAS_UNO || USE_WINUI
@@ -15,7 +14,7 @@ using System.Windows.Media.Imaging;
 namespace PackageExplorer
 {
     [PackageContentViewerMetadata(99, ".jpg", ".gif", ".png", ".tif", ".bmp", ".ico")]
-    internal sealed class ImageFileViewer : IPackageContentViewer
+    internal class ImageFileViewer : IPackageContentViewer
     {
         public object GetView(IPackageContent selectedFile, IReadOnlyList<IPackageContent> peerFiles)
         {

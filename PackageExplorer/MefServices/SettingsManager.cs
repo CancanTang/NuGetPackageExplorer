@@ -1,18 +1,16 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
-
 using Newtonsoft.Json;
-
-using NuGet.Configuration;
-
 using NuGetPackageExplorer.Types;
-
 using Windows.Storage;
-
+using NuGet.Configuration;
 using NpeConstants = NuGetPe.NuGetConstants;
 
 #if !HAS_UNO && !USE_WINUI
@@ -23,7 +21,7 @@ using NpeSettings = PackageExplorer.Properties.Settings;
 namespace PackageExplorer
 {
     [Export(typeof(ISettingsManager))]
-    internal sealed partial class SettingsManager : ISettingsManager, INotifyPropertyChanged
+    internal class SettingsManager : ISettingsManager, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -97,7 +95,7 @@ namespace PackageExplorer
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static object? GetValueFromLocalSettings<T>(string name)
         {
-            object? value;
+            object value;
             var settings = ApplicationData.Current.LocalSettings;
             value = settings.Values[name];
             if (typeof(T) == typeof(List<string>) && value is string str)

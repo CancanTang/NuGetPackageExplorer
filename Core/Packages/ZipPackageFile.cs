@@ -2,12 +2,11 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-
 using NuGet.Packaging;
 
 namespace NuGetPe
 {
-    internal sealed class ZipPackageFile : PackageFileBase
+    internal class ZipPackageFile : PackageFileBase
     {
         private readonly Func<Stream> _streamFactory;
 

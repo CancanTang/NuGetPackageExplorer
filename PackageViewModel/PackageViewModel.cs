@@ -1,15 +1,17 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using System.Windows.Input;
-
 using NuGet.Packaging;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 using LazyPackageCommand = System.Lazy<NuGetPackageExplorer.Types.IPackageCommand, NuGetPackageExplorer.Types.IPackageCommandMetadata>;
@@ -279,10 +281,9 @@ namespace PackageExplorerViewModel
                     // This may be a URI or a file
                     if (Uri.TryCreate(value, UriKind.Absolute, out var result))
                     {
-                        if (AppCompat.IsSupported(NuGetPe.RuntimeFeature.FileSystemWatcher)
-                            && result!.IsFile
-                            && File.Exists(value))
+                        if (result!.IsFile && File.Exists(value))
                         {
+#if !NETSTANDARD2_1 // UNO TODO: Use proper platform detection
                             // Clean up the old one since we can't reliably change the Filter without a race
                             if (_watcher != null)
                             {
@@ -302,6 +303,7 @@ namespace PackageExplorerViewModel
                             _watcher.Path = Path.GetDirectoryName(PackagePath)!;
                             _watcher.Filter = Path.GetFileName(PackagePath);
                             _watcher.EnableRaisingEvents = true;
+#endif
                         }
                     }
                 }
@@ -877,7 +879,7 @@ namespace PackageExplorerViewModel
             }
 
             // validate the package to see if there is any error before actually creating the package.
-            var firstIssue = Validate().FirstOrDefault(static p => p.Level == PackageIssueLevel.Error);
+            var firstIssue = Validate().FirstOrDefault(p => p.Level == PackageIssueLevel.Error);
             if (firstIssue != null)
             {
                 UIServices.Show(
@@ -1021,7 +1023,7 @@ namespace PackageExplorerViewModel
             {
                 DiagnosticsClient.TrackEvent("PackageViewModel_ViewPackageAnalysisExecute");
 
-                IEnumerable<PackageIssue> allIssues = Validate().OrderBy(static p => p.Title, StringComparer.CurrentCulture);
+                IEnumerable<PackageIssue> allIssues = Validate().OrderBy(p => p.Title, StringComparer.CurrentCulture);
                 SetPackageIssues(allIssues);
                 ShowPackageAnalysis = true;
             }
@@ -1460,12 +1462,15 @@ namespace PackageExplorerViewModel
         {
             var package = PackageHelper.BuildPackage(PackageMetadata, GetFiles());
             var packageFileName = Path.IsPathRooted(PackagePath) ? Path.GetFileName(PackagePath)! : string.Empty;
-            return package.Validate(_packageRules.Select(static r => r.Value), packageFileName);
+            return package.Validate(_packageRules.Select(r => r.Value), packageFileName);
         }
 
         private void Export(string rootPath)
         {
-            ArgumentNullException.ThrowIfNull(rootPath);
+            if (rootPath == null)
+            {
+                throw new ArgumentNullException(nameof(rootPath));
+            }
 
             if (!Directory.Exists(rootPath))
             {
@@ -1570,7 +1575,8 @@ namespace PackageExplorerViewModel
         [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "<Pending>")]
         public void AddDraggedAndDroppedFiles(PackageFolder? folder, string[] fileNames)
         {
-            ArgumentNullException.ThrowIfNull(fileNames);
+            if (fileNames is null)
+                throw new ArgumentNullException(nameof(fileNames));
 
             if (folder == null)
             {
@@ -1653,8 +1659,10 @@ namespace PackageExplorerViewModel
         [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "<Pending>")]
         public static void AddDraggedAndDroppedFileDescriptors(PackageFolder folder, IEnumerable<(string FilePath, Stream? Stream)> fileDescriptors)
         {
-            ArgumentNullException.ThrowIfNull(folder);
-            ArgumentNullException.ThrowIfNull(fileDescriptors);
+            if (folder is null)
+                throw new ArgumentNullException(nameof(folder));
+            if (fileDescriptors is null)
+                throw new ArgumentNullException(nameof(fileDescriptors));
             foreach (var fileDescription in fileDescriptors)
             {
                 var parts = fileDescription.FilePath.Split(Path.DirectorySeparatorChar);
@@ -1689,8 +1697,8 @@ namespace PackageExplorerViewModel
 
             // any deps
             return PackageMetadata.DependencyGroups
-                    .SelectMany(static ds => ds.Packages)
-                    .Any(static dp => dp.VersionRange.MinVersion?.IsTokenized() == true || dp.VersionRange.MaxVersion?.IsTokenized() == true);
+                    .SelectMany(ds => ds.Packages)
+                    .Any(dp => dp.VersionRange.MinVersion?.IsTokenized() == true || dp.VersionRange.MaxVersion?.IsTokenized() == true);
         }
 
         public bool IsTokenized => IsPackageTokenized();

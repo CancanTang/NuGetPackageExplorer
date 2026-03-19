@@ -1,21 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
 
 namespace NuGetPe
 {
-    internal sealed class SimplePackage : IPackage
+    internal class SimplePackage : IPackage
     {
         private readonly PackageBuilder _packageBuilder;
 
         public SimplePackage(PackageBuilder packageBuilder)
         {
-            ArgumentNullException.ThrowIfNull(packageBuilder);
+            if (packageBuilder == null)
+            {
+                throw new ArgumentNullException(nameof(packageBuilder));
+            }
 
             Id = packageBuilder.Id;
             Version = packageBuilder.Version;
@@ -44,13 +47,13 @@ namespace NuGetPe
             PackageTypes = packageBuilder.PackageTypes;
             MinClientVersion = packageBuilder.MinClientVersion;
             LicenseMetadata = packageBuilder.LicenseMetadata;
-            FrameworkReferenceGroups = packageBuilder.FrameworkReferenceGroups;
+            FrameworkReferenceGroups = packageBuilder.FrameworkReferenceGroups;            
 
             _packageBuilder = packageBuilder;
         }
         public IEnumerable<IPackageFile> GetFiles()
         {
-            return _packageBuilder.Files.Where(static p => !PackageUtility.IsManifest(p.Path));
+            return _packageBuilder.Files.Where(p => !PackageUtility.IsManifest(p.Path));
         }
 
         public Stream GetStream()

@@ -6,12 +6,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-
 using NuGet.Common;
 using NuGet.Packaging.Signing;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel
@@ -333,7 +330,7 @@ namespace PackageExplorerViewModel
                     await SigningUtility.SignAsync(options, signRequest, token);
                 }
 
-                if (packagePath != null)
+                if(packagePath != null)
                     File.Delete(packagePath);
 
                 token.ThrowIfCancellationRequested();
@@ -386,12 +383,12 @@ namespace PackageExplorerViewModel
                     var password = Password;
                     if (string.IsNullOrEmpty(password))
                     {
-                        certificate = X509CertificateLoader.LoadCertificateFromFile(certificateFileName);
+                        certificate = new X509Certificate2(certificateFileName);
                     }
                     else
                     {
                         // this throws if the password is wrong
-                        certificate = X509CertificateLoader.LoadPkcs12FromFile(certificateFileName, password);
+                        certificate = new X509Certificate2(certificateFileName, password);
                     }
                 }
 

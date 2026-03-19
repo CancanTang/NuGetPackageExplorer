@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 
 namespace PackageExplorerViewModel.PackageSearch
 {
-    internal sealed class LocalPackageSearcher<T> where T : IPackageSearchMetadata
+    internal class LocalPackageSearcher<T> where T : IPackageSearchMetadata
     {
         private readonly SearchContext _searchContext;
 
@@ -99,7 +98,7 @@ namespace PackageExplorerViewModel.PackageSearch
             {
                 return new List<string>();
             }
-            var values = value.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(static t => t.Trim());
+            var values = value.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim());
             return values;
         }
 

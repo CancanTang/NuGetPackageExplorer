@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,14 +8,17 @@ using System.Reflection.PortableExecutable;
 
 namespace NuGetPe.AssemblyMetadata
 {
-    internal sealed class AssemblyMetadataParser : IDisposable
+    internal class AssemblyMetadataParser : IDisposable
     {
         private readonly PEReader _peReader;
         private readonly MetadataReader _metadataReader;
 
         public AssemblyMetadataParser(string fileName)
         {
-            ArgumentNullException.ThrowIfNull(fileName);
+            if (fileName == null)
+            {
+                throw new ArgumentNullException(nameof(fileName));
+            }
 
             _peReader = new PEReader(File.OpenRead(fileName));
             _metadataReader = _peReader.GetMetadataReader();
@@ -24,7 +26,7 @@ namespace NuGetPe.AssemblyMetadata
 
         public AssemblyDebugData GetDebugData()
         {
-            var entry = _peReader.ReadDebugDirectory().Where(static de => de.Type == DebugDirectoryEntryType.EmbeddedPortablePdb).ToList();
+            var entry = _peReader.ReadDebugDirectory().Where(de => de.Type == DebugDirectoryEntryType.EmbeddedPortablePdb).ToList();
             if (entry.Count == 0) // no embedded ppdb
             {
 
@@ -113,7 +115,7 @@ namespace NuGetPe.AssemblyMetadata
             }
         }
 
-        public sealed class AttributeInfo
+        public class AttributeInfo
         {
             public string FullTypeName { get; }
             public CustomAttributeTypedArgument<string>[] FixedArguments { get; }
@@ -130,7 +132,7 @@ namespace NuGetPe.AssemblyMetadata
             }
         }
 
-        private sealed class AttributeTypeProvider : ICustomAttributeTypeProvider<string>
+        private class AttributeTypeProvider : ICustomAttributeTypeProvider<string>
         {
             private static readonly Dictionary<PrimitiveTypeCode, Type> PrimitiveTypeMappings =
                 new Dictionary<PrimitiveTypeCode, Type>
@@ -219,7 +221,6 @@ namespace NuGetPe.AssemblyMetadata
                 return typeof(Type).FullName!;
             }
 
-            [RequiresUnreferencedCode("Uses Type.GetType at runtime to resolve System.Type.")]
             public bool IsSystemType(string type)
             {
                 return Type.GetType(type, false) == typeof(Type);
@@ -230,7 +231,6 @@ namespace NuGetPe.AssemblyMetadata
                 return name;
             }
 
-            [RequiresUnreferencedCode("Uses Type.GetType at runtime to resolve enum information.")]
             public PrimitiveTypeCode GetUnderlyingEnumType(string type)
             {
                 var runtimeType = Type.GetType(type, false);
@@ -257,7 +257,7 @@ namespace NuGetPe.AssemblyMetadata
             _peReader.Dispose();
         }
 
-        private sealed class UnknownTypeException : InvalidOperationException
+        private class UnknownTypeException : InvalidOperationException
         {
             public UnknownTypeException(string message) : base(message)
             {

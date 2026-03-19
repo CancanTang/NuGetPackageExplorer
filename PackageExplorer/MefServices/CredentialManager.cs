@@ -1,6 +1,8 @@
-﻿using System.ComponentModel.Composition;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Linq;
 using System.Net;
-
 using PackageExplorerViewModel.Types;
 
 namespace PackageExplorer.MefServices
@@ -10,7 +12,6 @@ namespace PackageExplorer.MefServices
     {
         private readonly object _feedsLock = new object();
         private readonly List<Tuple<Uri, ICredentials>> _feeds;
-        internal static readonly char[] Separator = [':'];
 
         public CredentialManager()
         {
@@ -22,7 +23,7 @@ namespace PackageExplorer.MefServices
             // Support username and password in feed URL as specified in RFC 1738
             if (!string.IsNullOrEmpty(feedUri.UserInfo))
             {
-                var userInfoSplitted = feedUri.UserInfo.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
+                var userInfoSplitted = feedUri.UserInfo.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
                 if (userInfoSplitted.Length >= 2)
                 {
                     credentials = new NetworkCredential(userInfoSplitted[0], userInfoSplitted[1]);
@@ -43,40 +44,24 @@ namespace PackageExplorer.MefServices
             }
         }
 
-        public ICredentials? GetForUri(Uri uri)
+        public ICredentials GetForUri(Uri uri)
         {
+            var credentials = CredentialCache.DefaultCredentials;
             lock (_feedsLock)
             {
-                var matchingFeeds = _feeds.Where(x => string.Equals(uri.Scheme, x.Item1.Scheme, StringComparison.OrdinalIgnoreCase) &&
-                                                      string.Equals(uri.Host, x.Item1.Host, StringComparison.OrdinalIgnoreCase) &&
-                                                      uri.Port == x.Item1.Port &&
-                                                      HasPathPrefixBoundary(uri.AbsolutePath, x.Item1.AbsolutePath))
-                                          .ToList();
-                if (matchingFeeds.Count > 0)
+                var matchingFeeds = _feeds.Where(x => string.Compare(uri.Scheme, x.Item1.Scheme, StringComparison.OrdinalIgnoreCase) == 0 &&
+                                                      string.Compare(uri.Host, x.Item1.Host, StringComparison.OrdinalIgnoreCase) == 0 &&
+                                                      uri.AbsolutePath.Contains(x.Item1.AbsolutePath, StringComparison.OrdinalIgnoreCase));
+                if (matchingFeeds.Any())
                 {
-                    return matchingFeeds.First().Item2;
+                    credentials = matchingFeeds.First().Item2;
                 }
-                if (TryAddUriCredentials(uri, out var uriCredentials))
+                else if(TryAddUriCredentials(uri, out var uriCredentials))
                 {
-                    return uriCredentials;
+                    credentials = uriCredentials!;
                 }
             }
-
-            return null;
-        }
-
-        private static bool HasPathPrefixBoundary(string candidatePath, string feedPath)
-        {
-            var normalizedCandidatePath = candidatePath.TrimEnd('/');
-            var normalizedFeedPath = feedPath.TrimEnd('/');
-
-            if (!normalizedCandidatePath.StartsWith(normalizedFeedPath, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return normalizedCandidatePath.Length == normalizedFeedPath.Length ||
-                   normalizedCandidatePath[normalizedFeedPath.Length] == '/';
+            return credentials;
         }
     }
 }

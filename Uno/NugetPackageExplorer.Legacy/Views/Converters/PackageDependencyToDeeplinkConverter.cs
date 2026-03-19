@@ -1,18 +1,22 @@
-﻿using Microsoft.UI.Xaml.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 using NuGet.Packaging.Core;
 
+using Microsoft.UI.Xaml.Data;
+
 namespace NupkgExplorer.Views.Converters
 {
-    public partial class PackageDependencyToDeeplinkConverter : IValueConverter
-    {
-        public enum DeeplinkType { SearchLink, PackageLink }
+    public class PackageDependencyToDeeplinkConverter : IValueConverter
+	{
+		public enum DeeplinkType { SearchLink, PackageLink }
 
-        public DeeplinkType ConvertTo { get; set; }
+		public DeeplinkType ConvertTo { get; set; }
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is not PackageDependency dependency) return null!;
+            if (value is not PackageDependency dependency) return null;
 
             var path = ConvertTo switch
             {

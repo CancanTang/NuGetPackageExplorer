@@ -5,19 +5,15 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
-
 using Microsoft.Win32;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using Ookii.Dialogs.Wpf;
 
 namespace PackageExplorer
 {
     [Export(typeof(IUIServices))]
-    internal sealed class UIServices : IUIServices
+    internal class UIServices : IUIServices
     {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
         [Import]
@@ -272,13 +268,13 @@ namespace PackageExplorer
                     return false;
                 }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Show(e.Message, MessageLevel.Error);
                 selectedPath = string.Empty;
                 return false;
             }
-
+            
         }
 
         public Task BeginInvoke(Action action)
@@ -288,7 +284,10 @@ namespace PackageExplorer
 
         public Tuple<bool?, bool> ConfirmMoveFile(string fileName, string targetFolder, int numberOfItemsLeft)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(numberOfItemsLeft);
+            if (numberOfItemsLeft < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numberOfItemsLeft));
+            }
 
             var mainInstruction = string.Format(
                 CultureInfo.CurrentCulture,

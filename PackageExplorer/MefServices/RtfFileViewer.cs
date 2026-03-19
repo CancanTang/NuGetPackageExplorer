@@ -1,15 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Documents;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorer
 {
     [PackageContentViewerMetadata(100, ".rtf")]
-    internal sealed class RtfFileViewer : IPackageContentViewer
+    internal class RtfFileViewer : IPackageContentViewer
     {
         public object GetView(IPackageContent selectedFile, IReadOnlyList<IPackageContent> peerFiles)
         {

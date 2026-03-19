@@ -29,17 +29,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(TabViewExtensions),
             new PropertyMetadata(default(object), OnResetSelectionWithChanged));
 
-        public static object GetResetSelectionWith(FrameworkElement obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (object)obj.GetValue(ResetSelectionWithProperty);
-        }
-
-        public static void SetResetSelectionWith(FrameworkElement obj, object value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(ResetSelectionWithProperty, value);
-        }
+        public static object GetResetSelectionWith(FrameworkElement obj) => (object)obj.GetValue(ResetSelectionWithProperty);
+        public static void SetResetSelectionWith(FrameworkElement obj, object value) => obj.SetValue(ResetSelectionWithProperty, value);
 
         #endregion
         #region DependencyProperty: ResetSelectionWithItemVisibility
@@ -50,17 +41,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(TabViewExtensions),
             new PropertyMetadata(default(bool), (d, e) => d.Maybe<TabView>(control => OnResetSelectionWithItemVisibilityChanged(control, e))));
 
-        public static bool GetResetSelectionWithItemVisibility(TabView obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (bool)obj.GetValue(ResetSelectionWithItemVisibilityProperty);
-        }
-
-        public static void SetResetSelectionWithItemVisibility(TabView obj, bool value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(ResetSelectionWithItemVisibilityProperty, value);
-        }
+        public static bool GetResetSelectionWithItemVisibility(TabView obj) => (bool)obj.GetValue(ResetSelectionWithItemVisibilityProperty);
+        public static void SetResetSelectionWithItemVisibility(TabView obj, bool value) => obj.SetValue(ResetSelectionWithItemVisibilityProperty, value);
 
         #endregion
         #region DependencyProperty: ResetSelectionWithItemVisibilitySubscription
@@ -71,17 +53,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(TabViewExtensions),
             new PropertyMetadata(default(IDisposable)));
 
-        private static IDisposable GetResetSelectionWithItemVisibilitySubscription(TabView obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (IDisposable)obj.GetValue(ResetSelectionWithItemVisibilitySubscriptionProperty);
-        }
-
-        private static void SetResetSelectionWithItemVisibilitySubscription(TabView obj, IDisposable? value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(ResetSelectionWithItemVisibilitySubscriptionProperty, value);
-        }
+        private static IDisposable GetResetSelectionWithItemVisibilitySubscription(TabView obj) => (IDisposable)obj.GetValue(ResetSelectionWithItemVisibilitySubscriptionProperty);
+        private static void SetResetSelectionWithItemVisibilitySubscription(TabView obj, IDisposable? value) => obj.SetValue(ResetSelectionWithItemVisibilitySubscriptionProperty, value);
 
         #endregion
         #region DependencyProperty: HideHeaderToolTip
@@ -92,29 +65,20 @@ namespace NupkgExplorer.Views.Extensions
             typeof(TabViewExtensions),
             new PropertyMetadata(default(bool), (d, e) => d.Maybe<TabViewItem>(control => OnHideHeaderToolTipChanged(control, e))));
 
-        public static bool GetHideHeaderToolTip(TabViewItem obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (bool)obj.GetValue(HideHeaderToolTipProperty);
-        }
-
-        public static void SetHideHeaderToolTip(TabViewItem obj, bool value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(HideHeaderToolTipProperty, value);
-        }
+        public static bool GetHideHeaderToolTip(TabViewItem obj) => (bool)obj.GetValue(HideHeaderToolTipProperty);
+        public static void SetHideHeaderToolTip(TabViewItem obj, bool value) => obj.SetValue(HideHeaderToolTipProperty, value);
 
         #endregion
 
         private static void OnResetSelectionWithChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
         {
-            if (sender is TabView tv) CoreImpl(tv, static x => x.TabItems
+            if (sender is TabView tv) CoreImpl(tv, x => x.TabItems
                 .OfType<TabViewItem>()
                 .FirstOrDefault()
-                ?.Apply(static y => y.IsSelected = true));
-            if (sender is TabViewItem tvi) CoreImpl(tvi, static x => x.IsSelected = true);
+                ?.Apply(y => y.IsSelected = true));
+            if (sender is TabViewItem tvi) CoreImpl(tvi, x => x.IsSelected = true);
 
-            static void CoreImpl<T>(T control, Action<T> action) where T : FrameworkElement
+            void CoreImpl<T>(T control, Action<T> action) where T : FrameworkElement
             {
                 if (GetResetSelectionWith(control) is not null)
                 {

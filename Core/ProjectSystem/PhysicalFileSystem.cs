@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace NuGetPe
 {
@@ -24,7 +27,8 @@ namespace NuGetPe
 
         public virtual void AddFile(string path, Stream stream)
         {
-            ArgumentNullException.ThrowIfNull(stream);
+            if (stream is null)
+                throw new ArgumentNullException(nameof(stream));
             var d = Path.GetDirectoryName(path);
             if (d != null)
             {
@@ -163,7 +167,8 @@ namespace NuGetPe
 
         protected string MakeRelativePath(string fullPath)
         {
-            ArgumentNullException.ThrowIfNull(fullPath);
+            if (fullPath is null)
+                throw new ArgumentNullException(nameof(fullPath));
             return fullPath.Substring(Root.Length).TrimStart(Path.DirectorySeparatorChar);
         }
 
@@ -175,7 +180,7 @@ namespace NuGetPe
 
         private static string EnsureTrailingSlash(string path)
         {
-            if (!path.EndsWith('\\'))
+            if (!path.EndsWith("\\", StringComparison.Ordinal))
             {
                 path += "\\";
             }

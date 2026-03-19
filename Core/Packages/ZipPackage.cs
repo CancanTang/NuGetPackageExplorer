@@ -1,7 +1,15 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
+using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Packaging.Signing;
@@ -322,6 +330,7 @@ namespace NuGetPe
                     }
                     else
                     {
+#if IS_SIGNING_SUPPORTED
                         var sig = await reader.GetPrimarySignatureAsync(CancellationToken.None).ConfigureAwait(false);
 
                         // Author signatures must be the primary, but they can contain
@@ -340,6 +349,7 @@ namespace NuGetPe
                         {
                             RepositorySignature = new RepositorySignatureInfo(sig);
                         }
+#endif
                     }
                 }
                 catch (SignatureException)
@@ -352,8 +362,6 @@ namespace NuGetPe
 
         public async Task VerifySignatureAsync()
         {
-            if (!AppCompat.IsSupported(RuntimeFeature.Cryptography)) return;
-
             using var reader = new PackageArchiveReader(_streamFactory(), false);
             var signed = await reader.IsSignedAsync(CancellationToken.None).ConfigureAwait(false);
             if (signed)
@@ -387,7 +395,7 @@ namespace NuGetPe
             // We exclude any opc files and the manifest file (.nuspec)
             var path = entry.FullName;
 
-            return !path.EndsWith('/') && !ExcludePaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)) &&
+            return !path.EndsWith("/", StringComparison.Ordinal) && !ExcludePaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)) &&
                    !PackageUtility.IsManifest(path);
         }
 
@@ -398,11 +406,11 @@ namespace NuGetPe
 
         public void Dispose()
         {
-            _danglingStreams.ForEach(static ds => ds.Dispose());
+            _danglingStreams.ForEach(ds => ds.Dispose());
         }
 
 
-        private sealed class MyPackageArchiveReader : PackageArchiveReader
+        private class MyPackageArchiveReader : PackageArchiveReader
         {
             private readonly ZipArchive _zipArchive;
 

@@ -12,15 +12,16 @@ namespace NuGetPe
     {
         public static IFolder Convert(List<NuGet.Packaging.IPackageFile> paths)
         {
-            ArgumentNullException.ThrowIfNull(paths);
+            if (paths == null)
+            {
+                throw new ArgumentNullException(nameof(paths));
+            }
 
-            paths.Sort(static (p1, p2) => string.Compare(p1.Path, p2.Path, StringComparison.OrdinalIgnoreCase));
+            paths.Sort((p1, p2) => string.Compare(p1.Path, p2.Path, StringComparison.OrdinalIgnoreCase));
 
             var root = new Folder("", parent: null);
 
-            var parsedPaths = paths
-                .Select(p => Tuple.Create<NuGet.Packaging.IPackageFile, string[]>(p, PackagePathUtility.NormalizeRelativePath(p.Path).Split('\\')))
-                .ToList();
+            var parsedPaths = paths.Select(p => Tuple.Create<NuGet.Packaging.IPackageFile, string[]>(p, p.Path.Split('\\'))).ToList();
             Parse(root, parsedPaths, 0, 0, parsedPaths.Count);
 
             return root;
@@ -68,7 +69,7 @@ namespace NuGetPe
 
 
 
-        sealed class File : IFile
+        class File : IFile
         {
             private readonly NuGet.Packaging.IPackageFile _packageFile;
 
@@ -121,7 +122,7 @@ namespace NuGetPe
             public Stream GetStream() => _packageFile.GetStream();
         }
 
-        sealed class Folder : IFolder
+        class Folder : IFolder
         {
             public IFolder? Parent { get; }
             public SortedCollection<IPart> Children { get; }
@@ -138,12 +139,12 @@ namespace NuGetPe
 
             public string Name { get; }
 
-            public IEnumerable<IFile> GetFiles() => Children.SelectMany(static e => e.GetFiles());
+            public IEnumerable<IFile> GetFiles() => Children.SelectMany(e => e.GetFiles());
 
             public IPart? this[string name] => Children.SingleOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
-        sealed class PackagePartComparer : Comparer<IPart>
+        class PackagePartComparer : Comparer<IPart>
         {
             public override int Compare(IPart? x, IPart? y)
             {

@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Globalization;
 using System.Linq;
-
 using NuGet.Packaging.Core;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel.Rules
 {
     [Export(typeof(IPackageRule))]
-    internal sealed class PrereleasePackageDependencyRule : IPackageRule
+    internal class PrereleasePackageDependencyRule : IPackageRule
     {
         #region IPackageRule Members
 
@@ -24,7 +21,7 @@ namespace PackageExplorerViewModel.Rules
                 return Array.Empty<PackageIssue>();
             }
 
-            return package.DependencyGroups.SelectMany(static p => p.Packages)
+            return package.DependencyGroups.SelectMany(p => p.Packages)
                                          .Where(IsPrereleaseDependency)
                                          .Select(CreatePackageIssue);
         }

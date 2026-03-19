@@ -1,5 +1,6 @@
-﻿using NuGet.Versioning;
-
+﻿using System;
+using System.Globalization;
+using NuGet.Versioning;
 using NuGetPe;
 
 #if HAS_UNO || USE_WINUI
@@ -18,15 +19,15 @@ namespace PackageExplorer
 #if !HAS_UNO && !USE_WINUI
     [ValueConversion(typeof(NuGetVersion), typeof(string))]
 #endif
-    public partial class NuGetVersionConverter : IValueConverter
+    public class NuGetVersionConverter : IValueConverter
     {
-        public object? Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object? Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             var version = value as NuGetVersion;
             return ManifestUtility.ReplaceMetadataWithToken(version?.ToFullString());
         }
 
-        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             var stringValue = (string?)value;
             if (string.IsNullOrWhiteSpace(stringValue))

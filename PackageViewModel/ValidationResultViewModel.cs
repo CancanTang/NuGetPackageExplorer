@@ -1,4 +1,8 @@
-﻿using NuGet.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using NuGet.Common;
 using NuGet.Packaging.Signing;
 
 
@@ -12,21 +16,19 @@ namespace PackageExplorerViewModel
         {
             _verifySignaturesResult = verifySignaturesResult ?? throw new ArgumentNullException(nameof(verifySignaturesResult));
 
-            Trust = verifySignaturesResult.Results.Select(static r => r.Trust).Min();
+            Trust = verifySignaturesResult.Results.Select(r => r.Trust).Min();
 
-            ErrorIssues = verifySignaturesResult.Results.SelectMany(static prv => prv.GetErrorIssues()).ToList();
-            WarningIssues = verifySignaturesResult.Results.SelectMany(static prv => prv.GetWarningIssues()).ToList();
+            ErrorIssues = verifySignaturesResult.Results.SelectMany(prv => prv.GetErrorIssues()).ToList();
+            WarningIssues = verifySignaturesResult.Results.SelectMany(prv => prv.GetWarningIssues()).ToList();
             InformationIssues = verifySignaturesResult.Results
-                                                      .SelectMany(static prv => prv.Issues)
-                                                      .Where(static sl => sl.Level == LogLevel.Information)
+                                                      .SelectMany(prv => prv.Issues)
+                                                      .Where(sl => sl.Level == LogLevel.Information)
                                                       .ToList();
         }
 
 
         public bool Valid => _verifySignaturesResult.IsValid;
-#pragma warning disable CA1720 // Identifier contains type name
         public bool Signed => _verifySignaturesResult.IsSigned;
-#pragma warning restore CA1720 // Identifier contains type name
 
 
         public IReadOnlyList<ILogMessage> ErrorIssues { get; }

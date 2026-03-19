@@ -1,10 +1,11 @@
-﻿using System.Collections.ObjectModel;
-
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using NuGet.Common;
+using NuGet.Packaging;
 using NuGet.Protocol.Core.Types;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel
@@ -12,7 +13,7 @@ namespace PackageExplorerViewModel
     public sealed class PublishPackageViewModel : ViewModelBase, IObserver<int>, IDisposable
     {
         private readonly MruPackageSourceManager _mruSourceManager;
-        private readonly EditablePackageMetadata _package;
+        private readonly IPackageMetadata _package;
         private readonly string? _packageFilePath;
         private readonly ISettingsManager _settingsManager;
         private readonly IUIServices _uiServices;
@@ -34,7 +35,8 @@ namespace PackageExplorerViewModel
             CredentialPublishProvider credentialPublishProvider,
             PackageViewModel viewModel)
         {
-            ArgumentNullException.ThrowIfNull(viewModel);
+            if (viewModel is null)
+                throw new ArgumentNullException(nameof(viewModel));
             _mruSourceManager = mruSourceManager ?? throw new ArgumentNullException(nameof(mruSourceManager));
             _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
             _uiServices = uiServices ?? throw new ArgumentNullException(nameof(uiServices));
@@ -218,7 +220,8 @@ namespace PackageExplorerViewModel
 
         public void OnError(Exception error)
         {
-            ArgumentNullException.ThrowIfNull(error);
+            if (error is null)
+                throw new ArgumentNullException(nameof(error));
             ShowProgress = false;
             HasError = true;
             Status = error.Message;
@@ -248,7 +251,7 @@ namespace PackageExplorerViewModel
                 var updateResource = await repository.GetResourceAsync<PackageUpdateResource>();
 
                 await updateResource.Push(new[] { _packageFilePath }, null, 999, false, s => PublishKeyOrPAT, s => PublishKeyOrPAT, AppendV2ApiToUrl != true, false, null, NullLogger.Instance);
-
+                
 
                 if (PublishAsUnlisted == true)
                 {

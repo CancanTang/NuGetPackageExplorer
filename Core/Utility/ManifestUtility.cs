@@ -25,7 +25,8 @@ namespace NuGetPe
 
         public static bool IsTokenized(this NuGetVersion version)
         {
-            ArgumentNullException.ThrowIfNull(version);
+            if (version is null)
+                throw new System.ArgumentNullException(nameof(version));
             var labels = version.ReleaseLabels.ToList();
 
             return labels.Count >= 3 && labels[0] == TokenStart && labels[labels.Count - 1] == TokenEnd;
@@ -36,7 +37,7 @@ namespace NuGetPe
             // This method needs to replace tokens in version fields with a sentinel value
             // since the NuGetVersion object model doesn't support it.
             // Also needs to handle blank versions
-            var xdoc = SecureXmlLoader.Load(stream);
+            var xdoc = XDocument.Load(stream);
             var ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
 
             // Get the version node
@@ -60,7 +61,7 @@ namespace NuGetPe
                     else
                     {
                         // Some packages (like Paket.Core have version="" in the dependencies. NuGet doesn't handle it, so remove it so we can load.
-                        dep.RemoveAttributes(static a => string.Equals("version", a.Name.LocalName, StringComparison.OrdinalIgnoreCase));
+                        dep.RemoveAttributes(a => string.Equals("version", a.Name.LocalName, StringComparison.OrdinalIgnoreCase));
                     }
                 }
             }            
@@ -90,7 +91,8 @@ namespace NuGetPe
         /// <returns></returns>
         public static string ReplaceTokenWithMetadata(string value)
         {
-            ArgumentNullException.ThrowIfNull(value);
+            if (value is null)
+                throw new System.ArgumentNullException(nameof(value));
 
             // see if it's a token            
 
@@ -140,7 +142,7 @@ namespace NuGetPe
         {
             // This method needs to replace tokens in version fields with a sentinel value
             // since the NuGetVersion object model doesn't support it.
-            var xdoc = SecureXmlLoader.Load(sourceStream);
+            var xdoc = XDocument.Load(sourceStream);
             var ns = xdoc.Root?.GetDefaultNamespace() ?? XNamespace.None;
 
             // Get the version node

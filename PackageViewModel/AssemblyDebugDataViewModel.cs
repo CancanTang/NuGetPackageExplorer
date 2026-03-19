@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 using NuGetPe.AssemblyMetadata;
 
 namespace PackageExplorerViewModel
@@ -27,8 +26,8 @@ namespace PackageExplorerViewModel
                     Sources = CreateSourcesViewModels(debugData);
                     PdbType = debugData.PdbType;
 
-                    MetadataReferences = debugData.MetadataReferences.OrderBy(static r => r.Name).ToList();
-                    CompilerFlags = debugData.CompilerFlags.OrderBy(static f => f.Key).ToList();
+                    MetadataReferences = debugData.MetadataReferences.OrderBy(r => r.Name).ToList();
+                    CompilerFlags = debugData.CompilerFlags.OrderBy(f => f.Key).ToList();
                     HasCompilerFlags = debugData.HasCompilerFlags;
                 }
 
@@ -38,7 +37,7 @@ namespace PackageExplorerViewModel
             {
 
             }
-
+            
         }
 
         public PdbType PdbType { get; private set; }
@@ -51,7 +50,7 @@ namespace PackageExplorerViewModel
 
         public bool HasCompilerFlags { get; private set; }
 
-        private static List<AssemblyDebugSourceDocumentViewModel> CreateSourcesViewModels(AssemblyDebugData debugData)
+        private static IReadOnlyList<AssemblyDebugSourceDocumentViewModel> CreateSourcesViewModels(AssemblyDebugData debugData)
         {
             var list = new List<AssemblyDebugSourceDocumentViewModel>(debugData.Sources.Count);
 

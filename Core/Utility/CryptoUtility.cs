@@ -20,7 +20,7 @@ namespace NuGetPe.Utility
     {
         public static TBSCertificate? GetSigningCertificate(PeFile peFile)
         {
-            ArgumentNullException.ThrowIfNull(peFile);
+            if (peFile == null) throw new ArgumentNullException(nameof(peFile));
 
             if (peFile.WinCertificate?.WCertificateType != PeNet.Header.Pe.WinCertificateType.PkcsSignedData)
             {
@@ -61,7 +61,7 @@ namespace NuGetPe.Utility
 
         public static (SignatureInfo? PublisherSignature, RepositorySignatureInfo? RepositorySignature) GetSignatures(PackageArchiveReader reader)
         {
-            ArgumentNullException.ThrowIfNull(reader);
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
 
             var entry = reader.GetEntry(SigningSpecifications.V1.SignaturePath);
             using var stream = entry.Open();
@@ -120,7 +120,7 @@ namespace NuGetPe.Utility
 
         private static TBSCertificate? GetSignerCertificate(SignerInfo signerInfo, CertificateChoices[]? certificates)
         {
-            ArgumentNullException.ThrowIfNull(signerInfo);
+            if (signerInfo is null) throw new ArgumentNullException(nameof(signerInfo));
             if (certificates is null) return null;
 
             if (signerInfo.Sid.IssuerAndSerialNumber is { } iasn)
@@ -144,9 +144,9 @@ namespace NuGetPe.Utility
         private static IEnumerable<(DateTimeOffset Value, TBSCertificate? SignerCertificate)?>? GetTimestamps(SignerInfo? signerInfo)
         {
             return signerInfo?.UnsignedAttrs
-                ?.Where(static x => x.AttrType == Rfc3161TstInfo.ContentTypeID)
-                .SelectMany(static x => x.AttrValues)
-                .Select(static x =>
+                ?.Where(x => x.AttrType == Rfc3161TstInfo.ContentTypeID)
+                .SelectMany(x => x.AttrValues)
+                .Select(x =>
                 {
                     var data = ContentInfo.Unwrap(SignedData.ContentTypeID, x, SignedData.Decode);
                     var info = Rfc3161TstInfo.From(data.EncapContentInfo);

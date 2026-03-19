@@ -7,10 +7,11 @@ namespace NuGetPe
     {
         public static byte[] ReadAllBytes(this Stream stream)
         {
-            System.ArgumentNullException.ThrowIfNull(stream);
+            if (stream is null)
+                throw new System.ArgumentNullException(nameof(stream));
             var length = (int)stream.Length;
             var buffer = new byte[length];
-            stream.ReadExactly(buffer, 0, length);
+            stream.Read(buffer, 0, length);
             return buffer;
         }
 
@@ -27,7 +28,8 @@ namespace NuGetPe
 
         public static Stream AsStream(this string value, Encoding encoding)
         {
-            System.ArgumentNullException.ThrowIfNull(encoding);
+            if (encoding is null)
+                throw new System.ArgumentNullException(nameof(encoding));
             return new MemoryStream(encoding.GetBytes(value));
         }
     }

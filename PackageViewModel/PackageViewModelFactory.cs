@@ -1,9 +1,10 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Threading.Tasks;
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel
@@ -55,12 +56,9 @@ namespace PackageExplorerViewModel
 
         #region IPackageViewModelFactory Members
 
-        public async Task<PackageViewModel?> CreateViewModel(IPackage? package, string? packagePath, string packageSource)
+        public async Task<PackageViewModel> CreateViewModel(IPackage package, string packagePath, string packageSource)
         {
-            if (package is null || packagePath is null)
-                return null;
-
-#if !HAS_UNO // UNO TODO: Use proper platform detection; wasm: System.Security.Cryptography.Encoding is not supported on this platform.
+#if !NETSTANDARD2_1 // UNO TODO: Use proper platform detection; wasm: System.Security.Cryptography.Encoding is not supported on this platform.
             // If it's a zip package, we need to load the verification data so it's ready for later
             if (package is ISignaturePackage zip)
             {

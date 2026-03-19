@@ -24,7 +24,10 @@ namespace PackageExplorerViewModel
 
         public static SourceRepository CreateRepository(string source)
         {
-            ArgumentNullException.ThrowIfNull(source);
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
             Uri uri;
             try
             {

@@ -1,15 +1,14 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-
 using NuGet.Packaging;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using PackageExplorerViewModel;
 
 namespace PackageExplorer
@@ -69,8 +68,8 @@ namespace PackageExplorer
         {
             LanguageBox.ItemsSource =
                 CultureInfo.GetCultures(CultureTypes.SpecificCultures)
-                    .Select(static c => c.Name)
-                    .OrderBy(static p => p, StringComparer.OrdinalIgnoreCase);
+                    .Select(c => c.Name)
+                    .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
         }
 
         private void PopulateFrameworkAssemblyNames()

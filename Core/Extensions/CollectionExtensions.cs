@@ -10,8 +10,10 @@ namespace NuGetPe
     {
         public static void CopyTo<T>(this IEnumerable<T> sourceCollection, ICollection<T> targetCollection)
         {
-            ArgumentNullException.ThrowIfNull(sourceCollection);
-            ArgumentNullException.ThrowIfNull(targetCollection);
+            if (sourceCollection is null)
+                throw new ArgumentNullException(nameof(sourceCollection));
+            if (targetCollection is null)
+                throw new ArgumentNullException(nameof(targetCollection));
 
             targetCollection.Clear();
             targetCollection.AddRange(sourceCollection);
@@ -19,10 +21,12 @@ namespace NuGetPe
 
         public static int RemoveAll<T>(this ICollection<T> collection, Func<T, bool> match)
         {
-            ArgumentNullException.ThrowIfNull(collection);
-            ArgumentNullException.ThrowIfNull(match);
+            if (collection is null)
+                throw new ArgumentNullException(nameof(collection));
+            if (match is null)
+                throw new ArgumentNullException(nameof(match));
 
-            List<T> toRemove = [.. collection.Where(match)];
+            IList<T> toRemove = collection.Where(match).ToList();
             foreach (var item in toRemove)
             {
                 collection.Remove(item);

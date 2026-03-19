@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Windows.Controls;
-
 using NuGet.Versioning;
 
 namespace PackageExplorer
@@ -15,7 +14,7 @@ namespace PackageExplorer
                 return ValidationResult.ValidResult;
             }
 
-            if (stringValue.Contains('$', System.StringComparison.Ordinal))
+            if (stringValue.Contains("$", System.StringComparison.Ordinal))
             {
                 return ValidationResult.ValidResult;
             }

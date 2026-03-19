@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
-
-#if WINDOWS
-using System.Drawing;
-#endif
 
 using NuGetPackageExplorer.Types;
 
@@ -44,8 +43,10 @@ namespace PackageExplorerViewModel
 
         public static void OpenFileInShell(PackageFile file, IUIServices uiServices)
         {
-            ArgumentNullException.ThrowIfNull(file);
-            ArgumentNullException.ThrowIfNull(uiServices);
+            if (file is null)
+                throw new ArgumentNullException(nameof(file));
+            if (uiServices is null)
+                throw new ArgumentNullException(nameof(uiServices));
 
             if (IsExecutableScript(file.Name))
             {
@@ -62,7 +63,7 @@ namespace PackageExplorerViewModel
             // copy to temporary file
             // create package in the temporary file first in case the operation fails which would
             // override existing file with a 0-byte file.
-            var tempFileName = GetTempFileName(file.Name);
+            var tempFileName = Path.Combine(GetTempFilePath(), file.Name);
             using (Stream tempFileStream = File.Create(tempFileName))
             using (var packageStream = file.GetStream())
             {
@@ -91,12 +92,13 @@ namespace PackageExplorerViewModel
         {
             DiagnosticsClient.TrackEvent("FileHelper_OpenFileInShellWith");
 
-            ArgumentNullException.ThrowIfNull(file);
+            if (file is null)
+                throw new ArgumentNullException(nameof(file));
 
             // copy to temporary file
             // create package in the temporary file first in case the operation fails which would
             // override existing file with a 0-byte file.
-            var tempFileName = GetTempFileName(file.Name);
+            var tempFileName = Path.Combine(GetTempFilePath(), file.Name);
 
             using (Stream tempFileStream = File.Create(tempFileName))
             using (var packageStream = file.GetStream())
@@ -159,7 +161,7 @@ namespace PackageExplorerViewModel
                 throw new ArgumentException("Argument is null or empty", nameof(fileName));
             }
 
-            var filePath = GetTempFileName(fileName);
+            var filePath = Path.Combine(GetTempFilePath(), fileName);
             File.WriteAllText(filePath, content);
             return filePath;
         }
@@ -171,9 +173,10 @@ namespace PackageExplorerViewModel
                 throw new ArgumentException("Argument is null or empty", nameof(fileName));
             }
 
-            ArgumentNullException.ThrowIfNull(content);
+            if (content is null)
+                throw new ArgumentNullException(nameof(content));
 
-            var filePath = GetTempFileName(fileName);
+            var filePath = Path.Combine(GetTempFilePath(), fileName);
             using (Stream targetStream = File.Create(filePath))
             {
                 content.CopyTo(targetStream);
@@ -181,15 +184,10 @@ namespace PackageExplorerViewModel
             return filePath;
         }
 
-        private static string GetTempFileName(string fileName)
-        {
-            var normalizedFileName = PackagePathUtility.NormalizePathSegment(fileName);
-            return Path.Combine(GetTempFilePath(), normalizedFileName);
-        }
-
         public static bool IsAssembly(string path)
         {
-            ArgumentNullException.ThrowIfNull(path);
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
 
             return path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
                    path.EndsWith(".winmd", StringComparison.OrdinalIgnoreCase) ||
@@ -223,7 +221,7 @@ namespace PackageExplorerViewModel
             /// <summary>
             /// Get icon location
             /// </summary>
-            IconLocation = 0x000001000,
+            IconLocatin = 0x000001000,
 
             /// <summary>
             /// Return exe type
@@ -308,12 +306,10 @@ namespace PackageExplorerViewModel
         /// </summary>
         private const int MAX_TYPE = 80;
 
-#pragma warning disable CA1823 // Avoid unused private fields
         private const int FILE_ATTRIBUTE_NORMAL = 0x80;
-#pragma warning restore CA1823 // Avoid unused private fields
 
 
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern int SHGetFileInfo(string pszPath, int dwFileAttributes, out SHFILEINFO psfi, uint cbfileInfo, SHGFI uFlags);
 
         [DllImport("user32.dll")]
@@ -336,7 +332,7 @@ namespace PackageExplorerViewModel
             public string szTypeName;
         }
 
-#if WINDOWS
+#if !NETSTANDARD2_1
 #pragma warning restore IDE1006 // Naming Styles
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
         public static Icon? ExtractAssociatedIcon(string fileName)

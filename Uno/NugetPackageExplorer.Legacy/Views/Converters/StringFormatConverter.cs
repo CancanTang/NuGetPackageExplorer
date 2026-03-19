@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace NupkgExplorer.Views.Converters
 {
-    public partial class StringFormatConverter : IValueConverter
+    public class StringFormatConverter : IValueConverter
     {
         public enum FormattingCulture { CurrentCulture, InvariantCulture }
 

@@ -55,7 +55,8 @@ namespace PackageExplorerViewModel
 
         public RepositoryMetadataViewModel(RepositoryMetadata metadata)
         {
-            ArgumentNullException.ThrowIfNull(metadata);
+            if (metadata is null)
+                throw new ArgumentNullException(nameof(metadata));
 
             Type = metadata.Type;
             Url = metadata.Url;

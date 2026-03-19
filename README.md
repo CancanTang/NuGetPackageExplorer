@@ -5,21 +5,21 @@
 
 ## How to install
 
-You can install NuGet Package Explorer on Windows with the [Microsoft Store](https://www.microsoft.com/store/apps/9wzdncrdmdm3),  [Chocolatey](https://chocolatey.org/packages/NugetPackageExplorer), or use it [from the Web](https://nuget.info) from any platform as well as a PWA. The Microsoft Store is the preferred version. It auto-updates and is the full application.
+You can install NuGet Package Explorer on Windows with the [Microsoft Store](https://www.microsoft.com/store/apps/9wzdncrdmdm3),  [Chocolatey](https://chocolatey.org/packages/NugetPackageExplorer), or use it [from the Web](https://nuget.info) from any platform as well as a PWA. The Microsoft Store is the preferred version for Windows 10 Creators Update and later. It auto-updates and is the full application.
 
-There also a Windows CI build available for direct install for Windows, and Web version [is also available](https://ci.nuget.info). The nightly build installs alongside
+There also a Windows CI build available for direct install on Windows 10 1803 and higher, and Web version [is also available](https://ci.nuget.info). The nightly build installs alongside
 the release version with no interference and will automatically update.
 
 | Build Number | Link |
 | ------------ | ---- |
-| [![Nightly build number](https://npenightly.blob.core.windows.net/nightly/ci_badge.svg?q=1)](https://npenightly.blob.core.windows.net/nightly/PackageExplorer.Package.appinstaller)| [Install](https://npenightly.blob.core.windows.net/nightly/PackageExplorer.Package.appinstaller)
+| [![Nightly build number](https://npenightly.blob.core.windows.net/nightly/ci_badge.svg?q=1)](https://npenightly.blob.core.windows.net/nightly/install.html)| [Install](https://npenightly.blob.core.windows.net/nightly/install.html)
 | [![Stable build number](https://npenightly.blob.core.windows.net/store/stable_badge.svg?q=1)](https://www.microsoft.com/store/apps/9wzdncrdmdm3) | [Microsoft Store](https://www.microsoft.com/store/apps/9wzdncrdmdm3) |
 | [![Chocolatey build number](https://img.shields.io/chocolatey/v/NugetPackageExplorer.svg)](https://chocolatey.org/packages/NugetPackageExplorer) | [Chocolatey](https://chocolatey.org/packages/NugetPackageExplorer) |
 | ![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/dotnet-validate) | [dotnet-validate CLI](https://www.nuget.org/packages/dotnet-validate) |
 
 ### Microsoft Store (recommended)
 
-<a href='//www.microsoft.com/store/apps/9wzdncrdmdm3?cid=storebadge&ocid=badge'><img src='https://developer.microsoft.com/store/badges/images/English_get-it-from-MS.png' alt='English badge' width="142" height="52" /></a>
+<a href='//www.microsoft.com/store/apps/9wzdncrdmdm3?cid=storebadge&ocid=badge'><img src='https://developer.microsoft.com/store/badges/images/English_get-it-from-MS.png' alt='English badge' width="284" height="104" /></a>
 
 ### 
 

@@ -1,4 +1,11 @@
-﻿using NuGet.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Packaging.Core;
 using NuGet.Protocol;
@@ -22,7 +29,7 @@ namespace NuGetPe
             _packageSourceMapping = PackageSourceMapping.GetPackageSourceMapping(_settings);
         }
 
-        private List<PackageSource> GetPackageSources(string packageId)
+        private IReadOnlyCollection<PackageSource> GetPackageSources(string packageId)
         {
             var packageSourceProvider = new PackageSourceProvider(_settings);
             var packageSources = packageSourceProvider.LoadPackageSources().Where(e => e.IsEnabled && e.IsHttp).Distinct().ToList();
@@ -59,7 +66,7 @@ namespace NuGetPe
         public async Task<FileInfo> DownloadAsync(string packageId, NuGetVersion? packageVersion, CancellationToken cancellationToken)
         {
             var packageSources = GetPackageSources(packageId);
-            foreach (var sourceRepository in packageSources.Select(static e => Repository.Factory.GetCoreV3(e)))
+            foreach (var sourceRepository in packageSources.Select(e => Repository.Factory.GetCoreV3(e)))
             {
                 PackageIdentity? packageIdentity;
                 if (packageVersion is not null)
@@ -98,11 +105,10 @@ namespace NuGetPe
             var packageDisplayName = packageVersion is null ? packageId : $"{packageId} {packageVersion.ToNormalizedString()}";
             string notFoundMessage = packageSources.Count switch
             {
-                0 => $". Make sure that package source mapping is properly configured in {string.Join(" and ", _settings.GetConfigFilePaths())}.",
-                1 => $" in the \"{packageSources.First().Name}\" NuGet package source.",
-                _ => $" in {packageSources.Skip(1).Aggregate($"either \"{packageSources.First().Name}\"", static (s, p) => s + $" or \"{p.Name}\"")} NuGet package sources.",
+                1 => $"the \"{packageSources.First().Name}\" NuGet package source.",
+                _ => $"{packageSources.Skip(1).Aggregate($"neither \"{packageSources.First().Name}\"", (s, p) => s + $" nor \"{p.Name}\"")} NuGet package sources.",
             };
-            throw new UnavailableException($"The package \"{packageDisplayName}\" was not found{notFoundMessage}");
+            throw new UnavailableException($"The package \"{packageDisplayName}\" was not found in {notFoundMessage}");
         }
 
         public void Dispose()

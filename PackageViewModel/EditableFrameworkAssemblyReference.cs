@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-
 using NuGet.Frameworks;
 using NuGet.Packaging;
 
@@ -56,7 +55,10 @@ namespace PackageExplorerViewModel
             return new FrameworkAssemblyReference(AssemblyName, SupportedFrameworks);
         }
 
-        public string? Error => null;
+        public string? Error
+        {
+            get { return null; }
+        }
 
         public string? this[string columnName]
         {

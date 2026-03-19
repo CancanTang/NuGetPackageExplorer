@@ -16,12 +16,7 @@ namespace NuGetPackageExplorer.Services
 {
     public class AppInsightsJsTelemetryService : ITelemetryService
     {
-        private static readonly ILogger Logger = typeof(AppInsightsJsTelemetryService).Log();
-        private static readonly Action<ILogger, string, Exception?> LogInvokedJs =
-            LoggerMessage.Define<string>(
-                LogLevel.Trace,
-                new EventId(0, nameof(InvokeJS)),
-                "Invoking JS:\n```\n{Script}\n```");
+        private static readonly ILogger _logger = typeof(AppInsightsJsTelemetryService).Log();
 
         private readonly bool _initialized;
         private readonly List<ITelemetryServiceInitializer> _initializers;
@@ -31,17 +26,17 @@ namespace NuGetPackageExplorer.Services
             _initialized = GetIsInitialized();
             _initializers = initializers;
 
-            if (_initialized && Logger.IsEnabled(LogLevel.Debug))
+            if (_initialized && _logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.Debug("App Insights SDK initialized successfully");
+                _logger.Debug("App Insights SDK initialized successfully");
             }
-            if (!_initialized && Logger.IsEnabled(LogLevel.Error))
+            if (!_initialized && _logger.IsEnabled(LogLevel.Error))
             {
-                Logger.Error("App Insights SDK failed to initialize");
+                _logger.Error("App Insights SDK failed to initialize");
             }
         }
 
-        private static bool GetIsInitialized()
+        private bool GetIsInitialized()
         {
             var result = InvokeJS("appInsights && !!appInsights.core");
 
@@ -54,7 +49,7 @@ namespace NuGetPackageExplorer.Services
 
             var localProperties = BuildLocalProperties(properties);
 
-            Logger.DebugIfEnabled(() => $"TrackEvent: {eventName}");
+            _logger.DebugIfEnabled(() => $"TrackEvent: {eventName}");
 
             InvokeJS("appInsights.trackEvent({\n" +
                 $"  name: \"{EscapeJs(eventName)}\",\n" +
@@ -64,10 +59,9 @@ namespace NuGetPackageExplorer.Services
 
         public void TrackException(Exception exception, IDictionary<string, string>? properties, IDictionary<string, double>? metrics)
         {
-            ArgumentNullException.ThrowIfNull(exception);
             if (!_initialized) return;
-
-            Logger.DebugIfEnabled(() => $"TrackException: {exception}");
+            
+            _logger.DebugIfEnabled(() => $"TrackException: {exception}");
 
             var localProperties = BuildLocalProperties(properties);
 
@@ -80,8 +74,8 @@ namespace NuGetPackageExplorer.Services
         public void TrackPageView(string pageName)
         {
             if (!_initialized) return;
-
-            Logger.DebugIfEnabled(() => $"TrackPageView: {pageName}");
+            
+            _logger.DebugIfEnabled(() => $"TrackPageView: {pageName}");
 
             var localProperties = BuildLocalProperties(null);
 
@@ -95,7 +89,7 @@ namespace NuGetPackageExplorer.Services
         {
             if (!_initialized) return;
 
-            Logger.DebugIfEnabled(() => $"TrackTrace: {evt}");
+            _logger.DebugIfEnabled(() => $"TrackTrace: {evt}");
 
             var localProperties = BuildLocalProperties(properties);
 
@@ -109,18 +103,18 @@ namespace NuGetPackageExplorer.Services
         {
             if (!_initialized) return;
 
-            Logger.DebugIfEnabled(static () => $"Flush");
+            _logger.DebugIfEnabled(() => $"Flush");
             InvokeJS($"appInsights.flush();");
         }
 
-        private static string? ToJsObject(Dictionary<string, string> o)
+        private static string? ToJsObject(IDictionary<string, string> o)
         {
             if (o == null) return null;
             if (o.Count == 0) return "{}";
 
-            return "{" + string.Join(", ", o.Select(static x => $"\"{x.Key}\": {FormatValue(x.Value)}")) + "}";
+            return "{" + string.Join(", ", o.Select(x => $"\"{x.Key}\": {FormatValue(x.Value)}")) + "}";
 
-            static string FormatValue(string x) => x != null
+            string FormatValue(string x) => x != null
                 ? ('"' + EscapeJs(x) + '"')
                 : "null";
         }
@@ -128,11 +122,16 @@ namespace NuGetPackageExplorer.Services
         private static string EscapeJs(string value) => Uno.Foundation.WebAssemblyRuntime.EscapeJs(value);
         private static string InvokeJS(string js)
         {
-            if (Logger.IsEnabled(LogLevel.Trace))
+            if (_logger.IsEnabled(LogLevel.Trace))
             {
-                LogInvokedJs(Logger, js, null);
+                _logger.LogTrace(string.Join("\n",
+                    "Invoking JS:",
+                    "```",
+                    js,
+                    "```"
+                ));
             }
-
+            
             return Uno.Foundation.WebAssemblyRuntime.InvokeJS(js);
         }
 

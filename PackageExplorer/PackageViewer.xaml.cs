@@ -1,16 +1,17 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
+using PackageExplorer.Properties;
 using PackageExplorerViewModel;
 
 namespace PackageExplorer
@@ -77,16 +78,6 @@ namespace PackageExplorer
                         "v9.0-maccatalyst", "net9.0-maccatalyst",
                         "v9.0-tizen", "net9.0-tizen",
                         "v9.0-windows", "net9.0-windows",
-
-                        // .NET 10 References
-                        "v10.0","net10.0",
-                        "v10.0-android", "net10.0-android",
-                        "v10.0-ios", "net10.0-ios",
-                        "v10.0-macos", "net10.0-macos",
-                        "v10.0-tvos", "net10.0-tvos",
-                        "v10.0-maccatalyst", "net10.0-maccatalyst",
-                        "v10.0-tizen", "net10.0-tizen",
-                        "v10.0-windows", "net10.0-windows",
                     }
                 ),
 
@@ -146,10 +137,10 @@ namespace PackageExplorer
                         "v4.7.1", "net471",
                         "v4.7.2", "net472",
                         "v4.8", "net48",
-                        "v4.8.1", "net481"
+						"v4.8.1", "net481"
                     }
                 )
-
+                
                 ,
                 (
                     //see https://docs.nuget.org/ndocs/schema/target-frameworks
@@ -304,7 +295,7 @@ namespace PackageExplorer
 
         // delay load the Syntax HighlightTextBox, avoid loading SyntaxHighlighting.dll upfront
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static ContentViewerPane CreateFileContentViewer()
+        private static UserControl CreateFileContentViewer()
         {
             var content = new ContentViewerPane();
             content.SetBinding(DataContextProperty, new Binding("CurrentFileInfo"));
@@ -546,10 +537,8 @@ namespace PackageExplorer
             }
         }
 
-        private bool CanHandleDataObject(PackageFolder? folder, IDataObject? data)
+        private bool CanHandleDataObject(PackageFolder? folder, IDataObject data)
         {
-            if (data is null) return false;
-
             if (DataContext is PackageViewModel model)
             {
                 if (model.IsSigned || model.IsInEditFileMode || model.IsInEditMetadataMode)
@@ -588,10 +577,8 @@ namespace PackageExplorer
             return false;
         }
 
-        private bool HandleDataObject(PackageFolder? folder, IDataObject? data, bool copy)
+        private bool HandleDataObject(PackageFolder? folder, IDataObject data, bool copy)
         {
-            if (data is null) return false;
-
             if (!CanHandleDataObject(folder, data))
             {
                 return false;
@@ -643,7 +630,7 @@ namespace PackageExplorer
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "<Pending>")]
-        private static DataObject CreateDataObject(PackagePart packagePart)
+        private static IDataObject CreateDataObject(PackagePart packagePart)
         {
             var data = new DataObject();
             data.SetData(PackageFileDataFormat, packagePart.Path);
@@ -683,7 +670,7 @@ namespace PackageExplorer
 
             var menuItems = new List<object>();
 
-
+          
 
 
             foreach (var pair in FrameworkFolders)
@@ -721,7 +708,7 @@ namespace PackageExplorer
                     item.CommandParameter = "portable";
                 }
 
-                menuItems.Insert(0, item); ;
+                menuItems.Insert(0, item);;
             }
 
             var addSeparator = menu.Items.Count > 0;
@@ -740,7 +727,7 @@ namespace PackageExplorer
             }
         }
 
-        private sealed class LazyPackageFileStream : Stream
+        private class LazyPackageFileStream : Stream
         {
             private readonly PackageFile _packageFile;
             private Stream? _inner;

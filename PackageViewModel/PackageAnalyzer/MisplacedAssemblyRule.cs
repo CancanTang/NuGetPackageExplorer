@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel.Rules
 {
     [Export(typeof(IPackageRule))]
-    internal sealed class MisplacedAssemblyRule : IPackageRule
+    internal class MisplacedAssemblyRule : IPackageRule
     {
-        private static readonly HashSet<string> AssemblyFolders = new(["lib", "analyzers", "build", "ref", "tools"], StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> assemblyFolders = new HashSet<string>(new[] { "lib", "analyzers", "build", "ref", "tools" }, StringComparer.OrdinalIgnoreCase);
 
         #region IPackageRule Members
 
@@ -25,7 +23,7 @@ namespace PackageExplorerViewModel.Rules
                 var directory = segments.First();
 
                 // if under 'folder' directly
-                if (AssemblyFolders.Contains(directory))
+                if (assemblyFolders.Contains(directory))
                 {
                     // file under the directory. Tools can do anything
                     if (segments.Length == 2 && FileHelper.IsAssembly(path) && !"tools".Equals(directory, StringComparison.OrdinalIgnoreCase))

@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.Composition;
+
 using Microsoft.UI.Xaml.Controls;
-using NupkgExplorer.Presentation.Content;
+
+// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
 namespace PackageExplorer
 {
@@ -13,7 +15,5 @@ namespace PackageExplorer
         {
             this.InitializeComponent();
         }
-
-        public InspectPackageViewModel? Model => DataContext as InspectPackageViewModel;
     }
 }

@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Packaging.Core;
@@ -15,7 +14,6 @@ using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 using PackageExplorerViewModel;
@@ -31,7 +29,7 @@ using NupkgExplorer.Client;
 namespace PackageExplorer
 {
     [Export(typeof(INuGetPackageDownloader))]
-    internal sealed class PackageDownloader : INuGetPackageDownloader
+    internal class PackageDownloader : INuGetPackageDownloader
     {
         private static readonly FileSizeConverter FileSizeConverter = new();
 
@@ -50,18 +48,18 @@ namespace PackageExplorer
 
         #region IPackageDownloader Members
 
-        public async Task Download(string targetFilePath, SourceRepository sourceRepository, PackageIdentity packageIdentity, CancellationToken cancellationToken = default)
+        public async Task Download(string targetFilePath, SourceRepository sourceRepository, PackageIdentity packageIdentity)
         {
-            var sourceFilePath = await DownloadWithProgress(sourceRepository, packageIdentity, cancellationToken);
+            var sourceFilePath = await DownloadWithProgress(sourceRepository, packageIdentity);
             if (!string.IsNullOrEmpty(sourceFilePath))
             {
                 File.Copy(sourceFilePath, targetFilePath, overwrite: true);
             }
         }
 
-        public async Task<ISignaturePackage?> Download(SourceRepository sourceRepository, PackageIdentity packageIdentity, CancellationToken cancellationToken = default)
+        public async Task<ISignaturePackage?> Download(SourceRepository sourceRepository, PackageIdentity packageIdentity)
         {
-            var tempFilePath = await DownloadWithProgress(sourceRepository, packageIdentity, cancellationToken);
+            var tempFilePath = await DownloadWithProgress(sourceRepository, packageIdentity);
             try
             {
                 return (tempFilePath == null) ? null : new ZipPackage(tempFilePath);
@@ -80,31 +78,44 @@ namespace PackageExplorer
 
         }
 
-        private async Task<string?> DownloadWithProgress(SourceRepository sourceRepository, PackageIdentity packageIdentity, CancellationToken cancellationToken)
+        private Task<string?> DownloadWithProgress(SourceRepository sourceRepository, PackageIdentity packageIdentity)
         {
 #if __WASM__
-            return await DownloadWasmAsync().ConfigureAwait(false);
+            // FIXME#14: we are bypassing the entire implementation, because DownloadResource could not be created on WASM (but works skia)
+            return NugetEndpoint
+                .DownloadPackage(packageIdentity.Id, packageIdentity.Version.ToNormalizedString())
+                .ContinueWith(x =>
+                {
+                    var path = $"./tmp/{Guid.NewGuid()}.nupkg";
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    using (var file = File.OpenWrite(path))
+                    {
+                        x.Result.CopyTo(file);
+                    }
+
+                    return path;
+                });
 #endif
-#pragma warning disable CS0162 // Unreachable code detected -- due to fixme
+
 #if HAS_UNO || USE_WINUI
             string? description = null;
             int? percent = null;
             var updated = 0;
 
             var tcs = new TaskCompletionSource<string?>();
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var cts = new CancellationTokenSource();
 
             // TODO: progress/error reporting & cancellation
-            _ = DoWorkAsync().ContinueWith(x => tcs.TrySetResult(x.Result));
+            DoWorkAsync().ContinueWith(x => tcs.TrySetResult(x.Result));
 #else
-            string progressDialogText;
+            var progressDialogText = Resources.Dialog_DownloadingPackage;
             if (packageIdentity.HasVersion)
             {
-                progressDialogText = string.Format(CultureInfo.CurrentCulture, Resources.Dialog_DownloadingPackage, packageIdentity.Id, packageIdentity.Version);
+                progressDialogText = string.Format(CultureInfo.CurrentCulture, progressDialogText, packageIdentity.Id, packageIdentity.Version);
             }
             else
             {
-                progressDialogText = string.Format(CultureInfo.CurrentCulture, Resources.Dialog_DownloadingPackage, packageIdentity.Id, string.Empty);
+                progressDialogText = string.Format(CultureInfo.CurrentCulture, progressDialogText, packageIdentity.Id, string.Empty);
             }
 
             string? description = null;
@@ -122,7 +133,7 @@ namespace PackageExplorer
             };
 
             // polling for Cancel button being clicked
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var cts = new CancellationTokenSource();
             var timer = new System.Timers.Timer(100);
             var tcs = new TaskCompletionSource<string?>();
 
@@ -160,7 +171,7 @@ namespace PackageExplorer
 
             timer.Start();
 #endif
-#pragma warning restore CS0162 // Unreachable code detected -- due to fixme
+
 
             async Task<string?> DoWorkAsync()
             {
@@ -202,9 +213,11 @@ namespace PackageExplorer
                 finally
                 {
 #if HAS_UNO || USE_WINUI
+                    cts!.Dispose();
 #else
                     timer!.Stop();
                     timer.Dispose();
+                    cts!.Dispose();
 
                     // close progress dialog when done
                     lock (progressDialogLock!)
@@ -245,29 +258,10 @@ namespace PackageExplorer
                 Interlocked.Exchange(ref updated, 1);
             }
 
-            return await tcs.Task.ConfigureAwait(false);
-
-#if __WASM__
-            async Task<string?> DownloadWasmAsync()
-            {
-                var path = $"./tmp/{Guid.NewGuid()}.nupkg";
-                Directory.CreateDirectory(Path.GetDirectoryName(path!)!);
-
-                await using var file = File.OpenWrite(path);
-                await NugetEndpoint.DownloadPackage(
-                    packageIdentity.Id,
-                    packageIdentity.Version.ToNormalizedString(),
-                    file,
-                    progress: NullProgress.Instance,
-                    cancellationToken).ConfigureAwait(false);
-                await file.FlushAsync(cancellationToken).ConfigureAwait(false);
-
-                return path;
-            }
-#endif
+            return tcs.Task;
         }
 
-        #endregion
+#endregion
 
         private void OnError(Exception error)
         {
@@ -275,17 +269,8 @@ namespace PackageExplorer
         }
     }
 
-    internal sealed class NullProgress : IProgress<(long ReceivedBytes, long? TotalBytes)>
-    {
-        public static NullProgress Instance { get; } = new();
-
-        public void Report((long ReceivedBytes, long? TotalBytes) value)
-        {
-        }
-    }
-
     // helper classes for getting http progress events
-    internal sealed class ProgressHttpMessageHandler : DelegatingHandler
+    internal class ProgressHttpMessageHandler : DelegatingHandler
     {
         private readonly Action<long, long?> _progressAction;
 
@@ -317,15 +302,18 @@ namespace PackageExplorer
     }
 
 
-
+    [Serializable]
     public class PackageNotFoundException : Exception
     {
         public PackageNotFoundException() { }
         public PackageNotFoundException(string message) : base(message) { }
         public PackageNotFoundException(string message, Exception inner) : base(message, inner) { }
+        protected PackageNotFoundException(
+          System.Runtime.Serialization.SerializationInfo info,
+          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 
-    internal sealed partial class ProgressStream : Stream
+    internal class ProgressStream : Stream
     {
         private readonly Stream _inner;
         private readonly Action<long> _progress;
@@ -410,7 +398,7 @@ namespace PackageExplorer
     }
 
     // https://github.com/NuGet/NuGet.Client/blob/5244dc7596f0cc0ed65984dc8c040d23b0e9c09b/src/NuGet.Core/NuGet.Protocol/HttpSource/HttpHandlerResourceV3Provider.cs
-    internal sealed class ProgressHttpHandlerResourceV3Provider : ResourceProvider
+    internal class ProgressHttpHandlerResourceV3Provider : ResourceProvider
     {
         private readonly Action<long, long?> _progressAction;
 

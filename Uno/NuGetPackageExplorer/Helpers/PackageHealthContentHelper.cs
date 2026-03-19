@@ -1,117 +1,162 @@
-﻿using System.Globalization;
-using System.Resources;
+﻿using System.Resources;
 
 using NuGet.Packaging.Signing;
 
 using NuGetPe;
+
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace PackageExplorer
 {
     public static class PackageHealthContentHelper
     {
         private static ResourceManager resManager => Resources.ResourceManager;
-        private static CultureInfo cultureInfo => CultureInfo.CurrentCulture;
 
-        public static string? ValidationResultToText(SignatureVerificationStatus result)
+        public static string ValidationResultToText(SignatureVerificationStatus result)
         {
-            return result switch
+            switch (result)
             {
-                SignatureVerificationStatus.Valid => resManager.GetString("Validation_Valid", cultureInfo),
-                SignatureVerificationStatus.Disallowed => resManager.GetString("Validation_Disallowed", cultureInfo),
-                SignatureVerificationStatus.Unknown => resManager.GetString("Validation_Unknown", cultureInfo),
-                SignatureVerificationStatus.Suspect => resManager.GetString("Validation_Suspect", cultureInfo),
-                _ => resManager.GetString("Validation_Unknown", cultureInfo),
-            };
+                case SignatureVerificationStatus.Valid:
+                    return resManager.GetString("Validation_Valid");
+                case SignatureVerificationStatus.Disallowed:
+                    return resManager.GetString("Validation_Disallowed");
+                case SignatureVerificationStatus.Unknown:
+                    return resManager.GetString("Validation_Unknown");
+                case SignatureVerificationStatus.Suspect:
+                    return resManager.GetString("Validation_Suspect");
+                default:
+                    return resManager.GetString("Validation_Unknown");
+            }
         }
 
         public static PackageHealthIconVisibilityInfo ValidationResultToIcon(SignatureVerificationStatus result)
         {
-            return result switch
+            switch (result)
             {
-                SignatureVerificationStatus.Valid => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                SignatureVerificationStatus.Disallowed => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                SignatureVerificationStatus.Unknown => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning),
-                SignatureVerificationStatus.Suspect => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning),
-                _ => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Info),
-            };
+                case SignatureVerificationStatus.Valid:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case SignatureVerificationStatus.Disallowed:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+                case SignatureVerificationStatus.Unknown:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning);
+                case SignatureVerificationStatus.Suspect:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning);
+                default:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Info);
+            }
         }
 
-        public static string? SourceLinkResultToText(SymbolValidationResult result)
+        public static string SourceLinkResultToText(SymbolValidationResult result)
         {
-            return result switch
+            switch (result)
             {
-                SymbolValidationResult.Valid => resManager.GetString("Validation_Valid", cultureInfo),
-                SymbolValidationResult.ValidExternal => resManager.GetString("Validation_ValidExternal", cultureInfo),
-                SymbolValidationResult.NothingToValidate => resManager.GetString("Validation_NothingToValidate", cultureInfo),
-                SymbolValidationResult.NoSourceLink => resManager.GetString("Validation_MissingSourceLink", cultureInfo),
-                SymbolValidationResult.HasUntrackedSources => resManager.GetString("Validation_HasUntrackedSources", cultureInfo),
-                SymbolValidationResult.InvalidSourceLink => resManager.GetString("Validation_InvalidSourceLink", cultureInfo),
-                SymbolValidationResult.NoSymbols => resManager.GetString("Validation_MissingSymbols", cultureInfo),
-                _ => null,
-            };
+                case SymbolValidationResult.Valid:
+                    return resManager.GetString("Validation_Valid");
+                case SymbolValidationResult.ValidExternal:
+                    return resManager.GetString("Validation_ValidExternal");
+                case SymbolValidationResult.NothingToValidate:
+                    return resManager.GetString("Validation_NothingToValidate");
+                case SymbolValidationResult.NoSourceLink:
+                    return resManager.GetString("Validation_MissingSourceLink");
+                case SymbolValidationResult.HasUntrackedSources:
+                    return resManager.GetString("Validation_HasUntrackedSources");
+                case SymbolValidationResult.InvalidSourceLink:
+                    return resManager.GetString("Validation_InvalidSourceLink");
+                case SymbolValidationResult.NoSymbols:
+                    return resManager.GetString("Validation_MissingSymbols");
+                default:
+                    return null;
+
+            }
         }
 
-        public static PackageHealthIconVisibilityInfo? SourceLinkResultToIcon(SymbolValidationResult result)
+        public static PackageHealthIconVisibilityInfo SourceLinkResultToIcon(SymbolValidationResult result)
         {
-            return result switch
+            switch (result)
             {
-                SymbolValidationResult.Valid => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                SymbolValidationResult.ValidExternal => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                SymbolValidationResult.NothingToValidate => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                SymbolValidationResult.NoSourceLink => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                SymbolValidationResult.HasUntrackedSources => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning),
-                SymbolValidationResult.InvalidSourceLink => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                SymbolValidationResult.NoSymbols => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                _ => null,
-            };
+                case SymbolValidationResult.Valid:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case SymbolValidationResult.ValidExternal:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case SymbolValidationResult.NothingToValidate:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case SymbolValidationResult.NoSourceLink:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+                case SymbolValidationResult.HasUntrackedSources:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning);
+                case SymbolValidationResult.InvalidSourceLink:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+                case SymbolValidationResult.NoSymbols:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+            }
+            return null;
         }
 
-        public static string? DeterministicResultToText(DeterministicResult result)
+        public static string DeterministicResultToText(DeterministicResult result)
         {
-            return result switch
+            switch (result)
             {
-                DeterministicResult.Valid => resManager.GetString("Validation_Valid", cultureInfo),
-                DeterministicResult.NonDeterministic => resManager.GetString("Validation_NonDeterministic", cultureInfo),
-                DeterministicResult.HasUntrackedSources => resManager.GetString("Validation_HasUntrackedSources", cultureInfo),
-                DeterministicResult.NothingToValidate => resManager.GetString("Validation_NothingToValidate", cultureInfo),
-                _ => null,
-            };
+                case DeterministicResult.Valid:
+                    return resManager.GetString("Validation_Valid");
+                case DeterministicResult.NonDeterministic:
+                    return resManager.GetString("Validation_NonDeterministic");
+                case DeterministicResult.HasUntrackedSources:
+                    return resManager.GetString("Validation_HasUntrackedSources");
+                case DeterministicResult.NothingToValidate:
+                    return resManager.GetString("Validation_NothingToValidate");
+                default:
+                    return null;
+            }
         }
 
-        public static PackageHealthIconVisibilityInfo? DeterministicResultToIcon(DeterministicResult result)
+        public static PackageHealthIconVisibilityInfo DeterministicResultToIcon(DeterministicResult result)
         {
-            return result switch
+            switch (result)
             {
-                DeterministicResult.Valid => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                DeterministicResult.NonDeterministic => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                DeterministicResult.HasUntrackedSources => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning),
-                DeterministicResult.NothingToValidate => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                _ => null,
-            };
+                case DeterministicResult.Valid:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case DeterministicResult.NonDeterministic:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+                case DeterministicResult.HasUntrackedSources:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning);
+                case DeterministicResult.NothingToValidate:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+            }
+            return null;
         }
 
-        public static string? CompilerFlagsResultToText(HasCompilerFlagsResult result)
+        public static string CompilerFlagsResultToText(HasCompilerFlagsResult result)
         {
-            return result switch
+            switch (result)
             {
-                HasCompilerFlagsResult.Valid => resManager.GetString("Validation_Valid", cultureInfo),
-                HasCompilerFlagsResult.Present => resManager.GetString("Validation_Present", cultureInfo),
-                HasCompilerFlagsResult.Missing => resManager.GetString("Validation_MissingCompilerFlags", cultureInfo),
-                HasCompilerFlagsResult.NothingToValidate => resManager.GetString("Validation_NothingToValidate", cultureInfo),
-                _ => null,
-            };
+                case HasCompilerFlagsResult.Valid:
+                    return resManager.GetString("Validation_Valid");
+                case HasCompilerFlagsResult.Present:
+                    return resManager.GetString("Validation_Present");
+                case HasCompilerFlagsResult.Missing:
+                    return resManager.GetString("Validation_MissingCompilerFlags");
+                case HasCompilerFlagsResult.NothingToValidate:
+                    return resManager.GetString("Validation_NothingToValidate");
+                default:
+                    return null;
+            }
         }
 
-        public static PackageHealthIconVisibilityInfo? CompilerFlagsResultToIcon(HasCompilerFlagsResult result)
+        public static PackageHealthIconVisibilityInfo CompilerFlagsResultToIcon(HasCompilerFlagsResult result)
         {
-            return result switch
+            switch (result)
             {
-                HasCompilerFlagsResult.Valid => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                HasCompilerFlagsResult.Present => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning),
-                HasCompilerFlagsResult.Missing => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical),
-                HasCompilerFlagsResult.NothingToValidate => new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK),
-                _ => null,
-            };
+                case HasCompilerFlagsResult.Valid:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+                case HasCompilerFlagsResult.Present:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Warning);
+                case HasCompilerFlagsResult.Missing:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.Critical);
+                case HasCompilerFlagsResult.NothingToValidate:
+                    return new PackageHealthIconVisibilityInfo(PackageHealthIconVisibilityInfo.IconTypes.OK);
+            }
+            return null;
         }
     }
 

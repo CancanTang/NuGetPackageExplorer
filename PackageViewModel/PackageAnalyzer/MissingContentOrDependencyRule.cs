@@ -1,15 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel.Rules
 {
     [Export(typeof(IPackageRule))]
-    internal sealed class MissingContentOrDependencyRule : IPackageRule
+    internal class MissingContentOrDependencyRule : IPackageRule
     {
         #region IPackageRule Members
 
@@ -31,7 +29,7 @@ namespace PackageExplorerViewModel.Rules
         private static bool HasContentOrDependency(IPackage package)
         {
             return package.GetFiles().Any() ||
-                   package.DependencyGroups.SelectMany(static p => p.Packages).Any() ||
+                   package.DependencyGroups.SelectMany(p => p.Packages).Any() ||
                    package.FrameworkReferences.Any();
         }
     }

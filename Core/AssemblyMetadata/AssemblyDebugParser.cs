@@ -9,7 +9,6 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
-
 using Microsoft.DiaSymReader.Tools;
 using Microsoft.FileFormats;
 using Microsoft.FileFormats.PDB;
@@ -146,7 +145,7 @@ namespace NuGetPe.AssemblyMetadata
             return _reader.GetBlobBytes(blobh);
         }
 
-        private List<CompilerFlag> GetCompilerFlags()
+        private IReadOnlyCollection<CompilerFlag> GetCompilerFlags()
         {
             var flags = new List<CompilerFlag>();
 
@@ -186,7 +185,7 @@ namespace NuGetPe.AssemblyMetadata
             return flags;
         }
 
-        private List<MetadataReference> GetMetadataReferences()
+        private IReadOnlyCollection<MetadataReference> GetMetadataReferences()
         {
             var references = new List<MetadataReference>();
 
@@ -295,7 +294,7 @@ namespace NuGetPe.AssemblyMetadata
 
                 var hashes = new Dictionary<string, byte[]>();
 
-                if (_reader?.DebugMetadataHeader == null)
+                if (_reader.DebugMetadataHeader == null)
                     return false;
 
                 var idOffset = _reader.DebugMetadataHeader.IdStartOffset;
@@ -327,11 +326,13 @@ namespace NuGetPe.AssemblyMetadata
                 return false;
             }
 
-#pragma warning disable CA2000 // Dispose objects before losing scope 
             // Deal with Windows PDB's
-            using var pdbFile = new PDBFile(new StreamAddressSpace(new MemoryStream(_pdbBytes!)));
-            using var peFile = new PEFile(new StreamAddressSpace(new MemoryStream(_peBytes!)));
-#pragma warning restore CA2000 // Dispose objects before losing scope
+
+            using var pdbBytesStream = new MemoryStream(_pdbBytes!);
+            var pdbFile = new PDBFile(new StreamAddressSpace(pdbBytesStream));
+
+            using var peBytesStream = new MemoryStream(_peBytes!);
+            var peFile = new PEFile(new StreamAddressSpace(peBytesStream));
 
             var pdb = peFile.Pdbs.FirstOrDefault(p => p.Signature == pdbFile.Signature && p.Age == pdbFile.Age);
 
@@ -354,7 +355,7 @@ namespace NuGetPe.AssemblyMetadata
 
                 var data = peReader.ReadPdbChecksumDebugDirectoryData(entry);
                 var algorithm = data.AlgorithmName;
-                var checksum = string.Concat(data.Checksum.Select(static b => b.ToString("x2", CultureInfo.InvariantCulture)));
+                var checksum = string.Concat(data.Checksum.Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
 
                 checksums.Add($"{algorithm}:{checksum}");
             }
@@ -446,7 +447,7 @@ namespace NuGetPe.AssemblyMetadata
                 {
                     map = SourceLinkMap.Parse(text);
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     errors.Add($"Source Link data is invalid. Error: '{e.Message}'");
                 }
@@ -454,7 +455,7 @@ namespace NuGetPe.AssemblyMetadata
 
             foreach (var doc in GetSourceDocuments())
             {
-                if (doc.IsEmbedded)
+                if(doc.IsEmbedded)
                 {
                     list.Add(doc);
                 }
@@ -471,7 +472,7 @@ namespace NuGetPe.AssemblyMetadata
                         list.Add(doc);
                     }
                 }
-
+                    
             }
 
             return (list, errors);

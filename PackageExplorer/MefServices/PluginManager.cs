@@ -1,18 +1,17 @@
-﻿using System.ComponentModel.Composition;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using NuGet.Versioning;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using Windows.Storage;
 
 #if !HAS_UNO && !USE_WINUI
@@ -22,7 +21,7 @@ using OSVersionHelper;
 namespace PackageExplorer
 {
     [Export(typeof(IPluginManager))]
-    internal sealed partial class PluginManager : IPluginManager, IDisposable
+    internal class PluginManager : IPluginManager, IDisposable
     {
         private const string NuGetDirectoryName = "NuGet";
         private const string PluginsDirectoryName = "PackageExplorerPlugins";
@@ -43,10 +42,6 @@ namespace PackageExplorer
             "lib\\netcoreapp3.1",
             "lib\\net5.0",
             "lib\\net6.0",
-            "lib\\net7.0",
-            "lib\\net8.0",
-            "lib\\net9.0",
-            "lib\\net10.0",
         };
 
         // %localappdata%/NuGet/PackageExplorerPlugins
@@ -102,7 +97,10 @@ namespace PackageExplorer
         public PluginManager(AggregateCatalog catalog)
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
         {
-            ArgumentNullException.ThrowIfNull(catalog);
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
 
             // clean up from previous run
             DeleteAllDeleteMeFiles();
@@ -115,7 +113,7 @@ namespace PackageExplorer
         [Import]
         public Lazy<IUIServices> UIServices { get; set; }
 
-        #region IPluginManager Members
+#region IPluginManager Members
 
         public ICollection<PluginInfo> Plugins
         {
@@ -124,7 +122,10 @@ namespace PackageExplorer
 
         public PluginInfo? AddPlugin(IPackage plugin)
         {
-            ArgumentNullException.ThrowIfNull(plugin);
+            if (plugin == null)
+            {
+                throw new ArgumentNullException(nameof(plugin));
+            }
 
             if (PluginsDirectory == null)
             {
@@ -185,7 +186,10 @@ namespace PackageExplorer
 
         public bool DeletePlugin(PluginInfo plugin)
         {
-            ArgumentNullException.ThrowIfNull(plugin);
+            if (plugin == null)
+            {
+                throw new ArgumentNullException(nameof(plugin));
+            }
 
             if (PluginsDirectory == null)
             {
@@ -214,7 +218,7 @@ namespace PackageExplorer
             return false;
         }
 
-        #endregion
+#endregion
 
         private void EnsurePluginCatalog(AggregateCatalog mainCatalog)
         {
@@ -267,7 +271,7 @@ namespace PackageExplorer
             var directoryInfo = new DirectoryInfo(PluginsDirectory);
             if (directoryInfo.Exists)
             {
-                return directoryInfo.GetDirectories().Select(ConvertFromDirectoryToPluginInfo).Where(static p => p != null)!;
+                return directoryInfo.GetDirectories().Select(ConvertFromDirectoryToPluginInfo).Where(p => p != null)!;
             }
             else
             {
@@ -354,7 +358,7 @@ namespace PackageExplorer
 
         private static void CreateDeleteMeFile(string targetPath)
         {
-            if (targetPath.EndsWith('\\'))
+            if (targetPath.EndsWith("\\", StringComparison.OrdinalIgnoreCase))
             {
                 targetPath = targetPath[0..^1];
             }
@@ -410,10 +414,10 @@ namespace PackageExplorer
 
             foreach (var loaderException in exception.LoaderExceptions!)
             {
-                if (loaderException != null)
+                if(loaderException != null)
                 {
                     builder.AppendLine(loaderException.Message);
-                }
+                }                
             }
 
             return builder.ToString();

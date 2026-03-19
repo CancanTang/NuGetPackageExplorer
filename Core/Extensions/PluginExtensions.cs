@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace NuGetPe
 {
@@ -6,12 +7,19 @@ namespace NuGetPe
     {
         public static int UnpackPackage(this IPackage package, string sourceDirectory, string targetRootDirectory)
         {
-            ArgumentNullException.ThrowIfNull(package);
-            ArgumentNullException.ThrowIfNull(sourceDirectory);
+            if (package is null)
+                throw new ArgumentNullException(nameof(package));
+            if (sourceDirectory == null)
+            {
+                throw new ArgumentNullException(nameof(sourceDirectory));
+            }
 
-            ArgumentNullException.ThrowIfNull(targetRootDirectory);
+            if (targetRootDirectory == null)
+            {
+                throw new ArgumentNullException(nameof(targetRootDirectory));
+            }
 
-            if (!sourceDirectory.EndsWith('\\'))
+            if (!sourceDirectory.EndsWith("\\", StringComparison.OrdinalIgnoreCase))
             {
                 sourceDirectory += "\\";
             }
@@ -21,9 +29,8 @@ namespace NuGetPe
             {
                 if (file.Path.StartsWith(sourceDirectory, StringComparison.OrdinalIgnoreCase))
                 {
-                    var suffixPath = file.Path[sourceDirectory.Length..];
-                    var targetPath = PackagePathUtility.ResolvePathUnderRoot(targetRootDirectory, suffixPath);
-                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                    var suffixPath = file.Path.Substring(sourceDirectory.Length);
+                    var targetPath = Path.Combine(targetRootDirectory, suffixPath);
 
                     using (var stream = File.Open(targetPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                     {

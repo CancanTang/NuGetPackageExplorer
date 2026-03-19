@@ -1,23 +1,21 @@
-﻿using System.ComponentModel.Composition;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Credentials;
 using NuGet.Protocol;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using PackageExplorerViewModel;
 using PackageExplorerViewModel.Types;
-
 using Settings = PackageExplorer.Properties.Settings;
 
 namespace PackageExplorer
@@ -27,7 +25,6 @@ namespace PackageExplorer
 #pragma warning restore CA1001 // Types that own disposable fields should be disposable
     {
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
-        [RequiresUnreferencedCode("DiagnosticsClient initialization uses reflection.")]
         public App()
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
         {
@@ -37,41 +34,35 @@ namespace PackageExplorer
         private CompositionContainer _container;
 
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
-        internal CompositionContainer Container => EnsureContainer();
-
-        [RequiresUnreferencedCode("MEF composition uses reflection to satisfy exports during trimming.")]
-        private CompositionContainer EnsureContainer()
+        internal CompositionContainer Container
         {
-            if (_container == null)
+            get
             {
-                var catalog1 = new AssemblyCatalog(typeof(App).Assembly);
-                var catalog2 = new AssemblyCatalog(typeof(PackageViewModel).Assembly);
-#pragma warning disable CA2000 // Dispose objects before losing scope
-                var catalog = new AggregateCatalog(catalog1, catalog2);
-#pragma warning restore CA2000 // Dispose objects before losing scope
+                if (_container == null)
+                {
+                    var catalog1 = new AssemblyCatalog(typeof(App).Assembly);
+                    var catalog2 = new AssemblyCatalog(typeof(PackageViewModel).Assembly);
+                    var catalog = new AggregateCatalog(catalog1, catalog2);
 
-                _container = new CompositionContainer(catalog);
+                    _container = new CompositionContainer(catalog);
 
-                // add PluginManager instance to be available as export to the rest of the app.
-                _container.ComposeParts(new PluginManager(catalog));
+                    // add PluginManager instance to be available as export to the rest of the app.
+                    _container.ComposeParts(new PluginManager(catalog));
+                }
+
+                return _container;
             }
-
-            return _container;
         }
 
-        [RequiresUnreferencedCode("MEF composition and WPF bindings rely on reflection to create exports and data contexts.")]
         private async void Application_Startup(object sender, StartupEventArgs e)
         {
             DiagnosticsClient.TrackEvent("AppStart", new Dictionary<string, string> { { "launchType", e.Args.Length > 0 ? "fileAssociation" : "shortcut" } });
-            if (!PluginInventoryTelemetry.TryTrack(() => Container.GetExportedValue<IPluginManager>()!, out var pluginInventoryError))
-            {
-                Trace.TraceWarning($"Failed to track plugin inventory: {pluginInventoryError}");
-            }
 
             // Overwrite settings with the real instance
             Resources["Settings"] = Container.GetExportedValue<ISettingsManager>();
 
-            NuGet.Protocol.Core.Types.UserAgent.SetUserAgentString(new NuGet.Protocol.Core.Types.UserAgentStringBuilder("NuGet Package Explorer"));
+            NuGet.Protocol.Core.Types.UserAgent.SetUserAgentString(new NuGet.Protocol.Core.Types.UserAgentStringBuilder("NuGet Package Explorer")
+                                                                   .WithOSDescription(RuntimeInformation.RuntimeIdentifier));
 
             InitCredentialService();
             HttpHandlerResourceV3.CredentialsSuccessfullyUsed = (uri, credentials) =>
@@ -99,7 +90,6 @@ namespace PackageExplorer
             }
         }
 
-        [RequiresUnreferencedCode("MEF composition is used to resolve credential providers via reflection.")]
         private void InitCredentialService()
         {
             Task<IEnumerable<ICredentialProvider>> getProviders()
@@ -111,8 +101,7 @@ namespace PackageExplorer
                     Container.GetExportedValue<CredentialPublishProvider>()!,
                     Container.GetExportedValue<CredentialDialogProvider>()!
                 });
-            }
-            ;
+            };
 
             HttpHandlerResourceV3.CredentialService =
                 new Lazy<ICredentialService>(() => new CredentialService(

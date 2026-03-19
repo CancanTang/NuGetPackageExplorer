@@ -1,18 +1,18 @@
-﻿using NuGetPackageExplorer.Types;
-
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using NuGetPackageExplorer.Types;
 using NuGetPe;
 using NuGetPe.AssemblyMetadata;
-
 using PackageExplorerViewModel;
 
 #if HAS_UNO || USE_WINUI
 using Windows.UI.Text;
-
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Text;
-
 using Uno.Extensions;
 using Uno.Logging;
 
@@ -27,7 +27,7 @@ using System.Windows.Data;
 namespace PackageExplorer
 {
     [PackageContentViewerMetadata(100, ".dll", ".exe", ".winmd", SupportsWindows10S = false)]
-    internal sealed class AssemblyFileViewer : IPackageContentViewer
+    internal class AssemblyFileViewer : IPackageContentViewer
     {
 
         public object GetView(IPackageContent selectedFile, IReadOnlyList<IPackageContent> peerFiles)
@@ -139,11 +139,7 @@ namespace PackageExplorer
                 };
 #endif
             }
-            catch (Exception
-#if HAS_UNO
-            e
-#endif
-            )
+            catch (Exception e)
             {
 #if HAS_UNO
                 this.Log().Error("Failed to generate view", e);
@@ -217,7 +213,7 @@ namespace PackageExplorer
                 yield return KeyValuePair.Create("Strong Name", assemblyMetaData.StrongName);
             }
 
-            foreach (var entry in assemblyMetaData.MetadataEntries.OrderBy(static kv => kv.Key))
+            foreach (var entry in assemblyMetaData.MetadataEntries.OrderBy(kv => kv.Key))
             {
                 yield return entry;
             }
@@ -227,8 +223,8 @@ namespace PackageExplorer
                 var assemblyNamesDelimitedByLineBreak = string.Join(
                     Environment.NewLine,
                     assemblyMetaData.ReferencedAssemblies
-                        .OrderBy(static assName => assName.Name)
-                        .Select(static assName => assName.FullName));
+                        .OrderBy(assName => assName.Name)
+                        .Select(assName => assName.FullName));
 
                 yield return KeyValuePair.Create("Referenced assemblies", assemblyNamesDelimitedByLineBreak);
             }
@@ -236,7 +232,7 @@ namespace PackageExplorer
 
 #if HAS_UNO || USE_WINUI
         [Bindable]
-        public sealed class AssemblyFileContent
+        public class AssemblyFileContent
         {
             public bool IsAssemblyFileContent => true;
 

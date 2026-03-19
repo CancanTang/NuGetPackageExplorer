@@ -9,7 +9,8 @@ namespace PackageExplorer
     {
         public static Dictionary<string, List<string>> Parse(string distingishedName)
         {
-            ArgumentNullException.ThrowIfNull(distingishedName);
+            if (distingishedName is null)
+                throw new ArgumentNullException(nameof(distingishedName));
             var result = new Dictionary<string, List<string>>(StringComparer.CurrentCultureIgnoreCase);
             var distinguishedNamePtr = IntPtr.Zero;
             try
@@ -28,13 +29,13 @@ namespace PackageExplorer
                     }
                     var key = Marshal.PtrToStringUni(ppKey, (int)pcKey);
                     var value = Marshal.PtrToStringUni(ppVal, (int)pcVal);
-                    if (result.TryGetValue(key, out var value1))
+                    if (result.ContainsKey(key))
                     {
-                        value1.Add(value);
+                        result[key].Add(value);
                     }
                     else
                     {
-                        result.Add(key, [value]);
+                        result.Add(key, new List<string> { value });
                     }
                     if (pcDN == 0)
                     {

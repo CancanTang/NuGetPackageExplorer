@@ -7,7 +7,8 @@ namespace NuGetPe
     {
         public TemporaryFile(Stream stream, string? extension = null)
         {
-            ArgumentNullException.ThrowIfNull(stream);
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
 
             if (string.IsNullOrWhiteSpace(extension) || extension[0] != '.')
             {
@@ -25,7 +26,8 @@ namespace NuGetPe
 
         public TemporaryFile(string path)
         {
-            ArgumentNullException.ThrowIfNull(path);
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
 
             FileName = path;
         }

@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel
 {
-    internal sealed class PackageSourceSettings : ISourceSettings
+    internal class PackageSourceSettings : ISourceSettings
     {
         private readonly ISettingsManager _settingsManager;
 

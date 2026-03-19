@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Formats.Asn1;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 // docs reference: https://tools.ietf.org/html/rfc5280
 // impl reference: n/a
@@ -11,7 +13,7 @@ namespace NuGetPe.Packages.Pkcs
 {
     public class DistinguishedName
     {
-        private sealed class Oids
+        private class Oids
         {
             // https://oidref.com/2.5.4
             public const string CommonName = "2.5.4.3";
@@ -21,7 +23,7 @@ namespace NuGetPe.Packages.Pkcs
             public const string StateOrProvinceName = "2.5.4.8";
             public const string OrganizationName = "2.5.4.10";
         }
-        private static readonly Dictionary<string, string> SubjectLabelMappings = new Dictionary<string, string>
+        private static readonly IReadOnlyDictionary<string, string> SubjectLabelMappings = new Dictionary<string, string>
         {
             [Oids.CommonName] = "CN",
             [Oids.OrganizationName] = "O",
@@ -60,8 +62,8 @@ namespace NuGetPe.Packages.Pkcs
                     universalString         UniversalString (SIZE (1..MAX)),
                     utf8String              UTF8String (SIZE (1..MAX)),
                     bmpString               BMPString (SIZE (1..MAX)) } */
-            var RDNs = reader.ReadSequenceOf(static sequence =>
-                sequence.ReadSetOf(static set =>
+            var RDNs = reader.ReadSequenceOf(sequence =>
+                sequence.ReadSetOf(set =>
                 {
                     var sequence = set.ReadSequence();
                     var type = sequence.ReadObjectIdentifier();
@@ -77,7 +79,7 @@ namespace NuGetPe.Packages.Pkcs
 
             return new()
             {
-                ValueCollection = RDNs.SelectMany(static x => x).ToArray()
+                ValueCollection = RDNs.SelectMany(x => x).ToArray()
             };
         }
 
@@ -88,13 +90,13 @@ namespace NuGetPe.Packages.Pkcs
 
             return string.Join(", ", ValueCollection
                 .Reverse()
-                .Select(static x => $"{(SubjectLabelMappings.TryGetValue(x.Type, out var alias) ? alias : x.Type)}={x.Value}")
+                .Select(x => $"{(SubjectLabelMappings.TryGetValue(x.Type, out var alias) ? alias : x.Type)}={x.Value}")
             );
         }
 
         public static bool operator ==(DistinguishedName? a, DistinguishedName? b) => a is null ? b is null : a.Equals(b);
         public static bool operator !=(DistinguishedName? a, DistinguishedName? b) => !(a == b);
-
+        
         public override int GetHashCode() => ValueCollection.GetHashCode();
         public override bool Equals(object? obj)
         {

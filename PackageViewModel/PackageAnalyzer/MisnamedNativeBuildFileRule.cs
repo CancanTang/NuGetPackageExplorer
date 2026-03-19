@@ -3,22 +3,20 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel.Rules
 {
     [Export(typeof(IPackageRule))]
-    internal sealed class MisnamedNativeBuildFileRule : IPackageRule
+    internal class MisnamedNativeBuildFileRule : IPackageRule
     {
         #region IPackageRule Members
 
         public IEnumerable<PackageIssue> Validate(IPackage package, string packagePath)
         {
             var files =
-                package.GetFiles().Where(static x =>
+                package.GetFiles().Where(x =>
                     x.Path.EndsWith(".props", StringComparison.OrdinalIgnoreCase) ||
                     x.Path.EndsWith(".targets", StringComparison.OrdinalIgnoreCase));
 

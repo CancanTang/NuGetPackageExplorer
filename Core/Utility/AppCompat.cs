@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -8,13 +9,17 @@ namespace NuGetPe
     public static class AppCompat
     {
 #pragma warning disable IDE1006 // Naming Styles
-        private static readonly Lazy<bool> isWindows10S = new Lazy<bool>(static () => IsWindows && GetIsWin10S());
+        private static readonly Lazy<bool> isWindows10S = new Lazy<bool>(GetIsWin10S);
 #pragma warning restore IDE1006 // Naming Styles
 
         public static bool IsWindows10S => isWindows10S.Value;
 
         public static bool IsWasm => RuntimeInformation.OSArchitecture ==
+#if NET5_0
             Architecture.Wasm;
+#else
+            (Architecture)4; // Architecture.Wasm definition is missing under NETSTANDARD2_1 & NETCOREAPP3_1
+#endif
 
         public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
@@ -31,13 +36,11 @@ namespace NuGetPe
                 RuntimeFeature.Cryptography => !IsWasm,
                 RuntimeFeature.NativeMethods => IsWindows,
                 RuntimeFeature.DiaSymReader => IsWindows,
-                RuntimeFeature.FileSystemWatcher => !IsWasm,
 
                 _ => throw new ArgumentOutOfRangeException($"Unknown feature flag: {feature}")
             };
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // We need this to be a method call so the dll isn't attempted to be loaded
         private static bool GetIsWin10S()
         {
             GetProductInfo(
@@ -77,6 +80,5 @@ namespace NuGetPe
         Cryptography,
         NativeMethods,
         DiaSymReader,
-        FileSystemWatcher,
     }
 }

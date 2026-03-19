@@ -60,7 +60,10 @@ namespace PackageExplorerViewModel
             }
         }
 
-        public string? Error => null;
+        public string? Error
+        {
+            get { return null; }
+        }
 
         public string? this[string columnName]
         {
@@ -103,7 +106,7 @@ namespace PackageExplorerViewModel
 
         public PackageDependency AsReadOnly()
         {
-            return new PackageDependency(Id, VersionSpec, null, Exclude?.Split(',').Select(static s => s.Trim()).ToList());
+            return new PackageDependency(Id, VersionSpec, null, Exclude?.Split(',').Select(s => s.Trim()).ToList());
         }
     }
 }

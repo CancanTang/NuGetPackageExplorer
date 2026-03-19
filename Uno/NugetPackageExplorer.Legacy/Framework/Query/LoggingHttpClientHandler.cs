@@ -1,49 +1,40 @@
-﻿using System.Globalization;
-
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Uno.Extensions;
 
 namespace NupkgExplorer.Framework.Query
 {
-    internal sealed class LoggingHttpClientHandler : DelegatingHandler
-    {
-        private static readonly Action<ILogger, string, Uri?, Exception?> RequestLog =
-            LoggerMessage.Define<string, Uri?>(
-                LogLevel.Debug,
-                new EventId(1, nameof(LoggingHttpClientHandler)),
-                "{HttpMethod} ... {RequestUri}");
+	internal class LoggingHttpClientHandler : DelegatingHandler
+	{
+		private readonly Lazy<ILogger> _logger = new Lazy<ILogger>(typeof(LoggingHttpClientHandler).Log);
 
-        private static readonly Action<ILogger, string, int?, Uri?, Exception?> ResponseLog =
-            LoggerMessage.Define<string, int?, Uri?>(
-                LogLevel.Debug,
-                new EventId(2, nameof(LoggingHttpClientHandler)),
-                "{HttpMethod} {StatusCode} {RequestUri}");
+		public LoggingHttpClientHandler(HttpMessageHandler handler) => InnerHandler = handler;
 
-        private readonly Lazy<ILogger> _logger = new Lazy<ILogger>(typeof(LoggingHttpClientHandler).Log);
+		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+		{
+			var response = default(HttpResponseMessage);
 
-        public LoggingHttpClientHandler(HttpMessageHandler handler) => InnerHandler = handler;
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var response = default(HttpResponseMessage);
-
-            try
-            {
+			try
+			{
                 if (_logger.Value.IsEnabled(LogLevel.Debug))
                 {
-                    var method = request.Method.ToString().ToUpper(CultureInfo.InvariantCulture);
-                    RequestLog(_logger.Value, method, request.RequestUri, null);
+                    _logger.Value.LogDebug($"{request.Method.ToString().ToUpper()} ... {request.RequestUri}");
                 }
 
-                return response = await base.SendAsync(request, cancellationToken);
-            }
-            finally
-            {
+				return response = await base.SendAsync(request, cancellationToken);
+			}
+			finally
+			{
                 if (_logger.Value.IsEnabled(LogLevel.Debug))
                 {
-                    var method = request.Method.ToString().ToUpper(CultureInfo.InvariantCulture);
-                    ResponseLog(_logger.Value, method, (int?)response?.StatusCode, request.RequestUri, null);
+                    _logger.Value.LogDebug($"{request.Method.ToString().ToUpper()} {response?.StatusCode} {request.RequestUri} ");
                 }
-            }
-        }
-    }
+			}
+		}
+	}
 }

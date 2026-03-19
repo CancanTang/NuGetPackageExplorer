@@ -1,11 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Input;
-
 using AuthenticodeExaminer;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 using NuGetPe.Utility;
 
@@ -13,7 +14,7 @@ using PeNet;
 
 namespace PackageExplorerViewModel
 {
-    internal sealed class ViewContentCommand : CommandBase, ICommand
+    internal class ViewContentCommand : CommandBase, ICommand
     {
         public ViewContentCommand(PackageViewModel packageViewModel)
             : base(packageViewModel)
@@ -22,7 +23,7 @@ namespace PackageExplorerViewModel
 
         #region ICommand Members
 
-        public event EventHandler? CanExecuteChanged = static delegate { };
+        public event EventHandler? CanExecuteChanged = delegate { };
 
         public bool CanExecute(object? parameter)
         {
@@ -146,32 +147,20 @@ namespace PackageExplorerViewModel
                 else
                 {
                     using var stream = StreamUtility.MakeSeekable(file.GetStream(), disposeOriginal: true);
+                    var peFile = new PeFile(stream);
+                    var certificate = CryptoUtility.GetSigningCertificate(peFile);
 
-                    if (PeFile.IsPeFile(stream))
+                    if (certificate is not null)
                     {
-                        stream.Position = 0;
-
-                        var peFile = new PeFile(stream);
-                        var certificate = CryptoUtility.GetSigningCertificate(peFile);
-
-                        if (certificate is not null)
-                        {
-                            sigs = new List<AuthenticodeSignature>(0);
-                            isValidSig = SignatureCheckResult.UnknownProvider;
-                        }
-                        else
-                        {
-                            sigs = new List<AuthenticodeSignature>(0);
-                            isValidSig = SignatureCheckResult.NoSignature;
-                        }
-                        size = peFile.FileSize;
+                        sigs = new List<AuthenticodeSignature>(0);
+                        isValidSig = SignatureCheckResult.UnknownProvider;
                     }
                     else
                     {
                         sigs = new List<AuthenticodeSignature>(0);
-                        size = stream.Length;
                         isValidSig = SignatureCheckResult.NoSignature;
                     }
+                    size = peFile.FileSize;
                 }
             }
 
@@ -193,7 +182,9 @@ namespace PackageExplorerViewModel
             var extension = Path.GetExtension(file.Name);
 
             return from p in ViewModel.ContentViewerMetadata
+#if !NETSTANDARD2_1
                    where AppCompat.IsWindows10S ? p.Metadata.SupportsWindows10S : true // Filter out incompatible addins on 10s
+#endif
                    where p.Metadata.SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase)
                    orderby p.Metadata.Priority
                    select p.Value;

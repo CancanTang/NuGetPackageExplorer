@@ -15,7 +15,7 @@ using Uno.Logging;
 namespace NuGetPackageExplorer.MefServices
 {
     [Export(typeof(IUIServices))]
-    internal sealed class UIServices : IUIServices
+    internal class UIServices : IUIServices
     {
         public Task BeginInvoke(Action action)
         {
@@ -49,7 +49,7 @@ namespace NuGetPackageExplorer.MefServices
 
         public object Initialize()
         {
-            return null!;
+            return null;
         }
 
         public bool OpenCredentialsDialog(string target, out NetworkCredential? networkCredential)

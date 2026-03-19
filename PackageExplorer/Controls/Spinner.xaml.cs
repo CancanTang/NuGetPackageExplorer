@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace PackageExplorer.Controls
 {
-    internal sealed class EllipseDetails
+    internal class EllipseDetails
     {
         public double Width { get; set; }
         public double Height { get; set; }
@@ -19,25 +19,25 @@ namespace PackageExplorer.Controls
 #pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
     }
 
-    internal sealed class EllipseData : ObservableCollection<EllipseDetails>
+    internal class EllipseData : ObservableCollection<EllipseDetails>
     {
-        private static readonly double[] LeftCoordinates = [
+        private static readonly double[] LeftCoordinates = new[] {
                 20.1696, 2.86816, 5.03758e-006, 12.1203, 36.5459, 64.6723, 87.6176, 98.165, 92.9838, 47.2783
-            ];
+            };
 
-        private static readonly double[] TopCoordinates = [
+        private static readonly double[] TopCoordinates = new[] {
                 9.76358, 29.9581, 57.9341, 83.3163, 98.138, 96.8411, 81.2783, 54.414, 26.9938, 0.5
-            ];
+            };
 
-        private static readonly int[] Opacities = [
+        private static readonly int[] Opacities = new[] {
                 0xE6, 0xCD, 0xB3, 0x9A, 0x80, 0x67, 0x4D, 0x34, 0x1A, 0xFF
-            ];
+            };
 
-        private readonly SolidColorBrush _indicatorFill = (SolidColorBrush)(new BrushConverter().ConvertFrom("#007ACC"))!;
+        private readonly SolidColorBrush IndicatorFill = (SolidColorBrush)(new BrushConverter().ConvertFrom("#007ACC"));
 
         public EllipseData() : base()
         {
-            var baseColor = _indicatorFill.Color;
+            var baseColor = IndicatorFill.Color;
 
             Enumerable.Range(0, LeftCoordinates.Length)
                 .Select(i => new EllipseDetails

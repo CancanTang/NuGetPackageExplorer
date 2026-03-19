@@ -1,11 +1,10 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
-
 using NuGet.Packaging;
-
 using NuGetPackageExplorer.Types;
 
 using NuGetPe;
@@ -20,15 +19,16 @@ namespace PackageExplorerViewModel
         private string? _name;
         private string _path;
         private string? _extension;
-#pragma warning disable IDE1006 // Naming Styles
         protected PackageFolder? _parent;
-#pragma warning restore IDE1006 // Naming Styles
 
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
         protected PackagePart(string name, PackageFolder? parent, PackageViewModel? viewModel)
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
         {
-            ArgumentNullException.ThrowIfNull(name);
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
 
             PackageViewModel = viewModel;
             _parent = parent;
@@ -46,7 +46,7 @@ namespace PackageExplorerViewModel
             {
                 if (_parent != value)
                 {
-                    _parent = (PackageFolder?)value;
+                    _parent = (PackageFolder?) value;
                     UpdatePath();
                 }
             }
@@ -57,7 +57,8 @@ namespace PackageExplorerViewModel
             get { return _name!; }
             set
             {
-                ArgumentNullException.ThrowIfNull(value);
+                if (value == null)
+                    throw new ArgumentNullException(nameof(value));
 
                 if (_name != value)
                 {
@@ -171,11 +172,6 @@ namespace PackageExplorerViewModel
         {
             if (!Name.Equals(newName, StringComparison.Ordinal))
             {
-                if (!IsSafePathSegment(newName))
-                {
-                    return;
-                }
-
                 if (_parent != null)
                 {
                     if (!Name.Equals(newName, StringComparison.OrdinalIgnoreCase) &&
@@ -277,19 +273,6 @@ namespace PackageExplorerViewModel
 
         protected virtual void Dispose(bool disposing)
         {
-        }
-
-        protected static bool IsSafePathSegment(string pathSegment)
-        {
-            try
-            {
-                PackagePathUtility.NormalizePathSegment(pathSegment);
-                return true;
-            }
-            catch (InvalidDataException)
-            {
-                return false;
-            }
         }
 
         ~PackagePart()

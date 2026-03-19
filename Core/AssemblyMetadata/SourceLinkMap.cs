@@ -71,7 +71,6 @@ namespace Microsoft.SourceLink.Tools
         }
 
         public IReadOnlyList<Entry> Entries => _entries;
-        internal static readonly char[] Separator = ['/', '\\'];
 
         /// <summary>
         /// Parses Source Link JSON string.
@@ -81,7 +80,10 @@ namespace Microsoft.SourceLink.Tools
         /// <exception cref="JsonException"><paramref name="json"/> is not valid JSON string.</exception>
         public static SourceLinkMap Parse(string json)
         {
-            ArgumentNullException.ThrowIfNull(json);
+            if (json is null)
+            {
+                throw new ArgumentNullException(nameof(json));
+            }
 
             var list = new List<Entry>();
 
@@ -118,7 +120,7 @@ namespace Microsoft.SourceLink.Tools
 
             // Sort the map by decreasing file path length. This ensures that the most specific paths will checked before the least specific
             // and that absolute paths will be checked before a wildcard path with a matching base
-            list.Sort(static (left, right) => -left.FilePath.Path.Length.CompareTo(right.FilePath.Path.Length));
+            list.Sort((left, right) => -left.FilePath.Path.Length.CompareTo(right.FilePath.Path.Length));
 
             return new SourceLinkMap(new ReadOnlyCollection<Entry>(list));
         }
@@ -188,7 +190,10 @@ namespace Microsoft.SourceLink.Tools
 #endif
             out string? uri)
         {
-            ArgumentNullException.ThrowIfNull(path);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
 
             if (path.Contains('*', StringComparison.Ordinal))
             {
@@ -204,7 +209,7 @@ namespace Microsoft.SourceLink.Tools
                 {
                     if (path.StartsWith(file.Path, StringComparison.OrdinalIgnoreCase))
                     {
-                        var escapedPath = string.Join("/", path[file.Path.Length..].Split(Separator).Select(Uri.EscapeDataString));
+                        var escapedPath = string.Join("/", path[file.Path.Length..].Split(new[] { '/', '\\' }).Select(Uri.EscapeDataString));
                         uri = mappedUri.Prefix + escapedPath + mappedUri.Suffix;
                         return true;
                     }
@@ -219,6 +224,6 @@ namespace Microsoft.SourceLink.Tools
 
             uri = null;
             return false;
-        }
+        } 
     }
 }

@@ -1,28 +1,27 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
-
 using NuGet.Packaging;
 using NuGet.Versioning;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using PackageExplorerViewModel;
-
 using Constants = NuGetPe.Constants;
+using LazyPackageCommand = System.Lazy<NuGetPackageExplorer.Types.IPackageCommand, NuGetPackageExplorer.Types.IPackageCommandMetadata>;
 using StringResources = PackageExplorer.Resources;
 
 namespace PackageExplorer
@@ -40,7 +39,8 @@ namespace PackageExplorer
         public MainWindow(IMruManager mruManager)
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
         {
-            ArgumentNullException.ThrowIfNull(mruManager);
+            if (mruManager is null)
+                throw new ArgumentNullException(nameof(mruManager));
 
             InitializeComponent();
 
@@ -77,13 +77,13 @@ namespace PackageExplorer
 
         [ImportMany(AllowRecomposition = true)]
 #pragma warning disable CA2227 // Collection properties should be read only
-        public ObservableCollection<Lazy<IPackageCommand, IPackageCommandMetadata>> PackageCommands
+        public ObservableCollection<LazyPackageCommand> PackageCommands
 #pragma warning restore CA2227 // Collection properties should be read only
         {
             get
             {
                 return PackageCommandsContainer != null
-                           ? (ObservableCollection<Lazy<IPackageCommand, IPackageCommandMetadata>>)PackageCommandsContainer.Collection
+                           ? (ObservableCollection<LazyPackageCommand>)PackageCommandsContainer.Collection
                            : null!;
             }
             set
@@ -236,20 +236,17 @@ namespace PackageExplorer
                 try
                 {
                     var packageViewModel = await PackageViewModelFactory.CreateViewModel(package, packagePath, packageSource);
-                    if (packageViewModel != null)
-                    {
-                        packageViewModel.PropertyChanged += OnPackageViewModelPropertyChanged;
-                        if (!string.IsNullOrEmpty(packageSource))
-                        {
-                            _mruManager.NotifyFileAdded(package, packageSource, packageType);
-                        }
-                    }
+                    packageViewModel.PropertyChanged += OnPackageViewModelPropertyChanged;
 
                     DataContext = packageViewModel;
+                    if (!string.IsNullOrEmpty(packageSource))
+                    {
+                        _mruManager.NotifyFileAdded(package, packageSource, packageType);
+                    }
                 }
                 catch (Exception e)
                 {
-                    if (e is not ArgumentException)
+                    if (!(e is ArgumentException))
                     {
                         DiagnosticsClient.TrackException(e);
                     }
@@ -626,7 +623,7 @@ namespace PackageExplorer
 
         private bool HasLoadedContent<T>()
         {
-            return MainContentContainer.Children.Cast<UIElement>().Any(static p => p is T);
+            return MainContentContainer.Children.Cast<UIElement>().Any(p => p is T);
         }
 
         private void CanExecuteNewCommand(object sender, CanExecuteRoutedEventArgs e)
@@ -693,7 +690,7 @@ namespace PackageExplorer
                 {
                     var firstFile = filenames[0];
                     if (FileUtility.IsSupportedFile(firstFile))
-                    {
+                    {                        
                         e.Effects = DragDropEffects.Copy;
                         e.Handled = true;
                         return;

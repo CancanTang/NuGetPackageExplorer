@@ -14,13 +14,13 @@ namespace PackageExplorer
     {
         #region IValueConverter Members
 
-        public object Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             var boolValue = (bool)value;
             return boolValue ? "Yes" : "No";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             throw new NotImplementedException();
         }

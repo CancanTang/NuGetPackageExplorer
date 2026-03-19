@@ -24,7 +24,6 @@ namespace NupkgExplorer.Business.Nupkg
 
 		public NupkgContentFile(ZipArchiveEntry entry)
 		{
-			ArgumentNullException.ThrowIfNull(entry);
 			_entry = entry;
 			_content = new Lazy<IFileContent>(LoadContent);
 
@@ -39,14 +38,21 @@ namespace NupkgExplorer.Business.Nupkg
 			{
 				try
 				{
-                    return Path.GetExtension(Name) switch
-                    {
-                        ".md" or ".xml" => new TextFileContent(stream),
-                        ".png" => new ImageFileContent(stream),
-                        ".dll" => new AssemblyFileContent(stream),
-                        _ => new TextFileContent(stream),
-                    };
-                    ;
+					switch (Path.GetExtension(Name))
+					{
+						case ".md":
+						case ".xml":
+							return new TextFileContent(stream);
+
+						case ".png":
+							return new ImageFileContent(stream);
+
+						case ".dll":
+							return new AssemblyFileContent(stream);
+
+						default:
+							return new TextFileContent(stream);
+					};
 				}
 				catch (Exception e)
 				{

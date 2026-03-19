@@ -1,13 +1,5 @@
-﻿using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices.WindowsRuntime;
-
+﻿using Microsoft.Extensions.Logging;
 using CommunityToolkit.WinUI.Helpers;
-
-using Microsoft.Extensions.Logging;
 
 using NuGet.Common;
 using NuGet.Configuration;
@@ -17,22 +9,45 @@ using NuGet.Protocol;
 using NuGet.Versioning;
 
 using NuGetPackageExplorer.Extensions;
-using NuGetPackageExplorer.Core.DeepLinking;
 using NuGetPackageExplorer.Types;
 
 using NuGetPe;
 
+using NupkgExplorer.Framework.Extensions;
 using NupkgExplorer.Framework.Navigation;
 using NupkgExplorer.Presentation.Content;
 using NupkgExplorer.Presentation.Dialogs;
 
+using PackageExplorer;
+
 using PackageExplorerViewModel;
 using PackageExplorerViewModel.Types;
 
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Hosting;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+
+using Uno.Extensions;
 using Uno.Logging;
 
+using Windows.Foundation;
+using Windows.Foundation.Collections;
 using Windows.UI.Core;
 using Windows.UI.Popups;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
 
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -43,27 +58,20 @@ namespace PackageExplorer
     /// </summary>
     public sealed partial class App : Application
     {
-        public Window MainWindow { get; private set; } = null!;
-
-        public static readonly Uri CommitUriValue = new Uri("https://github.com/NuGetPackageExplorer/NuGetPackageExplorer/commit/" + ResolveCommitId());
-
-        public static string InformationalVersion => global::ThisAssembly.AssemblyInformationalVersion;
-
-        public static Uri CommitUri => CommitUriValue;
+        public Window MainWindow { get; private set; }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
-        [RequiresUnreferencedCode("DiagnosticsClient initialization uses reflection.")]
         public App()
         {
             InitializeLogging();
 
-            InitializeComponent();
+            this.InitializeComponent();
 
 #if !USE_WINUI
-            Suspending += OnSuspending;
+            this.Suspending += OnSuspending;
 #endif
 
             DiagnosticsClient.Initialize(
@@ -79,59 +87,43 @@ namespace PackageExplorer
 
         internal static new App Current => (App)Application.Current;
 
-        private CompositionContainer _container = null!;
-
-        private static string ResolveCommitId()
-        {
-            const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-            var fullField = typeof(global::ThisAssembly).GetField("GitCommitIdFull", flags);
-
-            if (fullField?.GetValue(null) is string full && !string.IsNullOrEmpty(full))
-            {
-                return full;
-            }
-
-            return global::ThisAssembly.GitCommitId;
-        }
+        private CompositionContainer _container;
 
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
-        internal CompositionContainer Container => EnsureContainer();
-
-        [RequiresUnreferencedCode("MEF composition uses reflection to satisfy exports during trimming.")]
-        private CompositionContainer EnsureContainer()
+        internal CompositionContainer Container
         {
-            if (_container == null)
+            get
             {
-                var catalog1 = new AssemblyCatalog(typeof(App).Assembly);
-                var catalog2 = new AssemblyCatalog(typeof(PackageViewModel).Assembly);
-                var catalog = new AggregateCatalog(catalog1, catalog2);
+                if (_container == null)
+                {
+                    var catalog1 = new AssemblyCatalog(typeof(App).Assembly);
+                    var catalog2 = new AssemblyCatalog(typeof(PackageViewModel).Assembly);
+                    var catalog = new AggregateCatalog(catalog1, catalog2);
 
-                _container = new CompositionContainer(catalog);
+                    _container = new CompositionContainer(catalog);
 
-                // add PluginManager instance to be available as export to the rest of the app.
-                _container.ComposeParts(new PluginManager(catalog));
+                    // add PluginManager instance to be available as export to the rest of the app.
+                    _container.ComposeParts(new PluginManager(catalog));
+                }
+
+                return _container;
             }
-
-            return _container;
         }
 
         /// <summary>
         /// Invoked when the application is launched normally by the end user.  Other entry points
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        [RequiresUnreferencedCode("MEF composition resolves views and view models via reflection during application launch.")]
-        protected override async void OnLaunched(LaunchActivatedEventArgs args) =>
-            //await OnLaunched<MainWindow>(args, Container.GetExportedValue<MainWindow>, PerformMainLandingNavigation)
-            await OnLaunched<Shell>(args, BuildShell, PerformShellLandingNavigation)
+        /// <param name="e">Details about the launch request and process.</param>
+        protected override async void OnLaunched(LaunchActivatedEventArgs e) =>
+            //await OnLaunched<MainWindow>(e, Container.GetExportedValue<MainWindow>, PerformMainLandingNavigation)
+            await OnLaunched<Shell>(e, BuildShell, PerformShellLandingNavigation)
                 .ConfigureAwait(true);
 
-        [RequiresUnreferencedCode("MEF composition resolves views and view models via reflection during application launch.")]
         private async Task OnLaunched<TRootPage>(LaunchActivatedEventArgs e, Func<TRootPage?> buildRoot, Func<TRootPage, LaunchActivatedEventArgs, Task> landingNavigation) where TRootPage : UIElement
         {
-            ArgumentNullException.ThrowIfNull(e);
-            ArgumentNullException.ThrowIfNull(buildRoot);
-            ArgumentNullException.ThrowIfNull(landingNavigation);
+            if (buildRoot == null) throw new ArgumentNullException(nameof(buildRoot));
+            if (landingNavigation == null) throw new ArgumentNullException(nameof(landingNavigation));
 
 #if DEBUG
             if (System.Diagnostics.Debugger.IsAttached)
@@ -147,18 +139,13 @@ namespace PackageExplorer
             var window = new Window();
             window.Activate();
 #else
-            var window = Microsoft.UI.Xaml.Window.Current!;
+            var window = Microsoft.UI.Xaml.Window.Current;
 #endif
             MainWindow = window;
 
-#if DEBUG
-            MainWindow.UseStudio();
-#endif
-
-
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
-            if (window.Content is not TRootPage rootPage)
+            if (!(window.Content is TRootPage rootPage))
             {
                 rootPage = buildRoot()!;
 
@@ -176,7 +163,6 @@ namespace PackageExplorer
 
             try
             {
-                TrackPluginInventory();
                 await landingNavigation(rootPage, e).ConfigureAwait(true);
             }
             catch (Exception ex)
@@ -190,10 +176,9 @@ namespace PackageExplorer
             }
         }
 
-        [RequiresUnreferencedCode("MEF composition resolves Shell dependencies via reflection.")]
         private Shell BuildShell()
         {
-            var shell = Container.GetExportedValue<Shell>()!;
+            var shell = Container.GetExportedValue<Shell>();
             var frame = shell.GetContentFrame();
             frame.Navigated += (s, e) =>
             {
@@ -213,20 +198,20 @@ namespace PackageExplorer
 
                 DiagnosticsClient.TrackPageView(e.Content.GetType().Name);
             };
-            frame.NavigationFailed += (s, e) => throw new InvalidOperationException($"Failed to load {e.SourcePageType.FullName}: {e.Exception}", e.Exception);
+            frame.NavigationFailed += (s, e) => throw new Exception($"Failed to load {e.SourcePageType.FullName}: {e.Exception}");
 
-            var service = Container.GetExportedValue<NavigationService>()!;
+            var service = Container.GetExportedValue<NavigationService>();
 
 #if WINDOWS_UWP || __WASM__
             var manager = SystemNavigationManager.GetForCurrentView();
-            // wire-up back navigation
-            manager.BackRequested += (s, e) => frame.GoBack();
-            frame.RegisterPropertyChangedCallback(Frame.CanGoBackProperty, (s, e) =>
-            {
-                manager.AppViewBackButtonVisibility = frame.CanGoBack
-                    ? AppViewBackButtonVisibility.Visible
-                    : AppViewBackButtonVisibility.Collapsed;
-            });
+			// wire-up back navigation
+			manager.BackRequested += (s, e) => frame.GoBack();
+			frame.RegisterPropertyChangedCallback(Frame.CanGoBackProperty, (s, e) =>
+			{
+				manager.AppViewBackButtonVisibility = frame.CanGoBack
+					? AppViewBackButtonVisibility.Visible
+					: AppViewBackButtonVisibility.Collapsed;
+			});
 #endif
 
 #if __WASM__
@@ -244,7 +229,6 @@ namespace PackageExplorer
             return shell;
         }
 
-        [RequiresUnreferencedCode("MEF composition resolves navigation services and view models via reflection during landing navigation.")]
         private async Task PerformShellLandingNavigation(Shell shell, LaunchActivatedEventArgs e)
         {
             var navigation = Container.GetExportedValue<NavigationService>()!;
@@ -265,8 +249,8 @@ namespace PackageExplorer
                     if (!file.Exists) throw new FileNotFoundException("No such file", file.FullName);
 
                     var vm = await InspectPackageViewModel.CreateFromLocalPackage(file.FullName);
-                    if (vm != null)
-                        navigation.NavigateTo(vm);
+
+                    navigation.NavigateTo(vm);
 
                     DiagnosticsClient.TrackEvent("AppStart", new Dictionary<string, string> { { "launchType", "filePath" } });
                 }
@@ -282,8 +266,7 @@ namespace PackageExplorer
                 {
                     var vm = await InspectPackageViewModel.CreateFromRemotePackageWithFallback(identity);
 
-                    if (vm != null)
-                        navigation.NavigateTo(vm);
+                    navigation.NavigateTo(vm);
 
                     DiagnosticsClient.TrackEvent("AppStart", new Dictionary<string, string> { { "launchType", "packageIdentity" } });
                 }
@@ -300,10 +283,7 @@ namespace PackageExplorer
 
                 await new MessageDialog(ex.Message, nameof(PackageNotFoundException)).ShowAsync();
 
-                if (deeplink is not PackageIdentity identity)
-                {
-                    throw new InvalidOperationException("Package deeplink was expected after a package-not-found failure.");
-                }
+                if (deeplink is not PackageIdentity identity) throw new InvalidOperationException();
 
                 var vm = new FeedPackagePickerViewModel(identity.Id);
 
@@ -363,7 +343,7 @@ namespace PackageExplorer
         {
             try
             {
-                static object? DefaultFallbackResult()
+                object? DefaultFallbackResult()
                 {
 #pragma warning disable CS0162 // Unreachable code detected
 #if DEBUG
@@ -385,31 +365,65 @@ namespace PackageExplorer
                 }
 
                 var uri = new Uri(location);
-                var applicationBasePath = NuGetPackageExplorer.Helpers.ApplicationHelper.GetApplicationBaseLocation().AbsolutePath;
-                var route = WasmPackageRouteParser.Parse(uri, applicationBasePath);
+                var subpaths = uri.Segments
+                    .Skip(1) // skip first item that is just "/"
+                    .Select(x => x.TrimEnd('/')) // remove segment separator
+                    .ToArray();
 
-                return route switch
+                // Process `/packages` route
+                if (subpaths.Any() && "packages".Equals(subpaths[0], StringComparison.OrdinalIgnoreCase))
                 {
-                    WasmPackageIdentityRoute packageRoute => new PackageIdentity(packageRoute.Id, packageRoute.Version),
-                    WasmPackageSearchRoute searchRoute => searchRoute.Query,
-                    WasmPackageInvalidRoute => throw new FormatException($"Invalid path: {location}"),
-                    _ => DefaultFallbackResult()
-                };
-#else
+                    // nuget.org considers any subpath after version as invalid, eg: /packages/xyz/3.1.2/invalid
+                    if (subpaths.Length >= 4)
+                    {
+                        throw new FormatException($"Invalid path: {location}");
+                    }
+
+                    // Try to extract a direct package link, like: /packages/xyz, /packages/xyz/3.1.2
+                    if (subpaths.Length >= 2)
+                    {
+                        var id = subpaths[1];
+                        var version = default(NuGetVersion);
+                        if (subpaths.Length >= 3 && !NuGetVersion.TryParse(subpaths[2], out version))
+                        {
+                            throw new FormatException($"Invalid version: {subpaths[2]}");
+                        }
+
+                        return new PackageIdentity(id, version);
+                    }
+
+                    // Or, a search query, like: /packages, /packages?q=uno
+                    else
+                    {
+                        var query = new QueryParameterCollection(location)
+                            .Aggregate(
+                                new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase),
+                                (dict, kvp) =>
+                                {
+                                    dict[kvp.Key] = kvp.Value;
+                                    return dict;
+                                }
+                            );
+
+                        // note: null is for landing page, which isn't exactly(depends on landing navigation impl) the same as the search page.
+                        return query.GetValueOrDefault("q") ?? string.Empty;
+                    }
+                }
+#endif
+
                 if (this.Log().IsEnabled(LogLevel.Debug))
                 {
                     this.Log().Debug("parsing launch arg: " + e.Arguments);
                 }
 
                 // Assume everything else should be a path
-                var deeplink = e.Arguments?.NullIfEmpty();
+                var deeplink = e.Arguments.NullIfEmpty();
                 if (!string.IsNullOrWhiteSpace(deeplink))
                 {
                     return new FileInfo(deeplink);
                 }
 
                 return DefaultFallbackResult();
-#endif
             }
             catch (Exception ex)
             {
@@ -420,13 +434,13 @@ namespace PackageExplorer
             }
         }
 
-        [RequiresUnreferencedCode("MEF composition resolves services and view models via reflection.")]
         private void InitializeContainer()
         {
             // Overwrite settings with the real instance
             Resources["Settings"] = Container.GetExportedValue<ISettingsManager>();
 
-            NuGet.Protocol.Core.Types.UserAgent.SetUserAgentString(new NuGet.Protocol.Core.Types.UserAgentStringBuilder("NuGet Package Explorer"));
+            NuGet.Protocol.Core.Types.UserAgent.SetUserAgentString(new NuGet.Protocol.Core.Types.UserAgentStringBuilder("NuGet Package Explorer")
+                                                       .WithOSDescription(RuntimeInformation.RuntimeIdentifier));
 
             InitCredentialService();
             HttpHandlerResourceV3.CredentialsSuccessfullyUsed = (uri, credentials) =>
@@ -442,7 +456,6 @@ namespace PackageExplorer
             uiServices.Initialize();
         }
 
-        [RequiresUnreferencedCode("MEF composition resolves credential providers via reflection.")]
         private void InitCredentialService()
         {
             Task<IEnumerable<ICredentialProvider>> getProviders()
@@ -454,8 +467,7 @@ namespace PackageExplorer
                     Container.GetExportedValue<CredentialPublishProvider>()!,
                     Container.GetExportedValue<CredentialDialogProvider>()!
                 });
-            }
-            ;
+            };
 
             HttpHandlerResourceV3.CredentialService =
                 new Lazy<ICredentialService>(() => new CredentialService(
@@ -465,31 +477,17 @@ namespace PackageExplorer
 
         }
 
-        [RequiresUnreferencedCode("MEF composition resolves navigation and dialog services via reflection.")]
         private void RegisterShellNavigation()
         {
             NupkgExplorer.Framework.MVVM.ViewModelBase.DefaultContainer = Container;
 
-            var navigation = Container.GetExportedValue<NavigationService>()!;
+            var navigation = Container.GetExportedValue<NavigationService>();
             navigation.Register<HomePage, HomePageViewModel>();
             navigation.Register<FeedPackagePicker, FeedPackagePickerViewModel>();
             navigation.Register<InspectPackage, InspectPackageViewModel>();
 
-            var dialog = Container.GetExportedValue<DialogService>()!;
+            var dialog = Container.GetExportedValue<DialogService>();
             dialog.Register<DownloadProgressDialog, DownloadProgressDialogViewModel>();
-        }
-
-        private void TrackPluginInventory()
-        {
-            if (PluginInventoryTelemetry.TryTrack(() => Container.GetExportedValue<IPluginManager>()!, out var pluginInventoryError))
-            {
-                return;
-            }
-
-            if (this.Log().IsEnabled(LogLevel.Error))
-            {
-                this.Log().Error("Failed to track plugin inventory:", pluginInventoryError);
-            }
         }
 
         /// <summary>
@@ -499,7 +497,7 @@ namespace PackageExplorer
         /// <param name="e">Details about the navigation failure</param>
         void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
         {
-            throw new InvalidOperationException($"Failed to load {e.SourcePageType.FullName}: {e.Exception}", e.Exception);
+            throw new Exception($"Failed to load {e.SourcePageType.FullName}: {e.Exception}");
         }
 
         /// <summary>
@@ -521,7 +519,7 @@ namespace PackageExplorer
         /// </summary>
         internal static void InitializeLogging()
         {
-            var factory = LoggerFactory.Create(static builder =>
+            var factory = LoggerFactory.Create(builder =>
             {
 #if __WASM__
                 builder.AddProvider(new global::Uno.Extensions.Logging.WebAssembly.WebAssemblyConsoleLoggerProvider());

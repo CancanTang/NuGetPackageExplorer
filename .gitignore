@@ -265,10 +265,7 @@ __pycache__/
 
 # NuGet tools
 .store/
-nbgv
 
 # VS Code
-.vscode/*
-!.vscode/tasks.json
-!.vscode/launch.json
+.vscode/
 /dotnet-validate/Properties/launchSettings.json

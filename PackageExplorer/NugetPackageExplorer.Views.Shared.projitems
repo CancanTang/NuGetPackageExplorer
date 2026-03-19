@@ -33,6 +33,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MefServices\PackageDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MefServices\PluginManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MefServices\SettingsManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Resources.Designer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Utilities\FileUtility.cs" />
   </ItemGroup>
   <ItemGroup>

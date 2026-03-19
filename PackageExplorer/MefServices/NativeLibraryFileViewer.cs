@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-
 using NuGetPackageExplorer.Types;
 
 #if HAS_UNO || USE_WINUI
@@ -11,7 +10,7 @@ using System.Windows.Controls;
 namespace PackageExplorer
 {
     [PackageContentViewerMetadata(100, ".so", ".dylib")]
-    internal sealed class NativeLibraryFileViewer : IPackageContentViewer
+    internal class NativeLibraryFileViewer : IPackageContentViewer
     {
         public object GetView(IPackageContent selectedFile, IReadOnlyList<IPackageContent> peerFiles)
         {

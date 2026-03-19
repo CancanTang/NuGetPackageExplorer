@@ -1,5 +1,5 @@
-﻿using System.Text;
-
+﻿using System;
+using System.Text;
 using NuGet.Packaging;
 
 #if HAS_UNO
@@ -14,8 +14,6 @@ using System.Windows.Data;
 using _CultureInfo = System.Globalization.CultureInfo;
 #endif
 
-using CI = System.Globalization.CultureInfo;
-
 namespace PackageExplorer
 {
 #if !HAS_UNO
@@ -23,7 +21,7 @@ namespace PackageExplorer
 #endif
     public class LicenseMetadataConverter : IValueConverter
     {
-        public object? Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object? Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             if (value is LicenseMetadata metadata)
             {
@@ -41,16 +39,16 @@ namespace PackageExplorer
                     if (metadata.Type == LicenseType.Expression)
                     {
                         sb
-                            .AppendLine(CI.CurrentCulture, $"{Resources.Dialog_LicenseExpression} {metadata.LicenseExpression}")
-                            .AppendLine(CI.CurrentCulture, $"{Resources.Dialog_LicenseExpressionType} {metadata.Type}")
-                            .AppendLine(CI.CurrentCulture, $"{Resources.Dialog_LicenseExpressionVersion} {metadata.Version}");
+                            .AppendLine($"{Resources.Dialog_LicenseExpression} {metadata.LicenseExpression}")
+                            .AppendLine($"{Resources.Dialog_LicenseExpressionType} {metadata.Type}")
+                            .AppendLine($"{Resources.Dialog_LicenseExpressionVersion} {metadata.Version}");
                     }
                     else if (metadata.Type == LicenseType.File)
                     {
                         sb
-                            .AppendLine(CI.CurrentCulture, $"License: {metadata.License}")
-                            .AppendLine(CI.CurrentCulture, $"Type: {metadata.Type}")
-                            .AppendLine(CI.CurrentCulture, $"License Url: {metadata.LicenseUrl}");
+                            .AppendLine($"License: {metadata.License}")
+                            .AppendLine($"Type: {metadata.Type}")
+                            .AppendLine($"License Url: {metadata.LicenseUrl}");
                     }
 
                     return sb.ToString().TrimEnd();
@@ -60,6 +58,6 @@ namespace PackageExplorer
             return null;
         }
 
-        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo language) => throw new NotSupportedException("Only one-way conversion is supported.");
+        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture) => throw new NotSupportedException("Only one-way conversion is supported.");
     }
 }

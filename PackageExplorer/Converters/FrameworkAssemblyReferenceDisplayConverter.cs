@@ -18,7 +18,7 @@ namespace PackageExplorer
     {
         #region IValueConverter Members
 
-        public object? Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object? Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             var far = (FrameworkAssemblyReference)value;
             if (far == null)
@@ -26,7 +26,7 @@ namespace PackageExplorer
                 return null;
             }
 
-            var fxs = string.Join("; ", far.SupportedFrameworks.Select(static fn => fn.DotNetFrameworkName));
+            var fxs = string.Join("; ", far.SupportedFrameworks.Select(fn => fn.DotNetFrameworkName));
 
             if (parameter as string == "includeAssembly")
             {
@@ -36,7 +36,7 @@ namespace PackageExplorer
             return fxs;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             throw new NotSupportedException();
         }

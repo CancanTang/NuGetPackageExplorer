@@ -17,18 +17,18 @@ namespace PackageExplorer
     {
 #region IValueConverter Members
 
-        public object Convert(object value, Type targetType, object? parameter, _CultureInfo language)
+        public object Convert(object value, Type targetType, object? parameter, _CultureInfo culture)
         {
 #if HAS_UNO
-            var cultureInfo = new CultureInfo(language);
+            var cultureInfo = new CultureInfo(culture);
 #else
-            var cultureInfo = language;
+            var cultureInfo = culture;
 #endif
 
             return ConvertFileSizeToString((long)value, cultureInfo);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             throw new NotImplementedException();
         }

@@ -1,16 +1,15 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
 
 namespace PackageExplorerViewModel
 {
-    internal sealed class SavePackageCommand : CommandBase, ICommand
+    internal class SavePackageCommand : CommandBase, ICommand
     {
         private const string SaveAction = "Save";
         private const string SaveAsAction = "SaveAs";
@@ -71,7 +70,7 @@ namespace PackageExplorerViewModel
                 {
                     // validate the package to see if there is any error before actually creating the package.
                     var firstIssue =
-                        ViewModel.Validate().FirstOrDefault(static p => p.Level == PackageIssueLevel.Error);
+                        ViewModel.Validate().FirstOrDefault(p => p.Level == PackageIssueLevel.Error);
                     if (firstIssue != null)
                     {
                         ViewModel.UIServices.Show(

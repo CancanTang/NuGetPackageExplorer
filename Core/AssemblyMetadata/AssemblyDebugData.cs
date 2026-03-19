@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.PortableExecutable;
+using System.Text;
+using System.Threading.Tasks;
+
+using NuGet.Protocol.Plugins;
 
 namespace NuGetPe.AssemblyMetadata
 {
@@ -28,14 +33,14 @@ namespace NuGetPe.AssemblyMetadata
         public IReadOnlyList<string> SourceLinkErrors { get; internal set; }
         public IReadOnlyList<SymbolKey> SymbolKeys { get; internal set; }
 
-        public IReadOnlyCollection<MetadataReference> MetadataReferences { get; internal set; }
-        public IReadOnlyCollection<CompilerFlag> CompilerFlags { get; internal set; }
+        public IReadOnlyCollection<MetadataReference> MetadataReferences { get; internal set;}
+        public IReadOnlyCollection<CompilerFlag> CompilerFlags { get; internal set;}
 
         public bool PdbChecksumIsValid { get; internal set; }
 
-        public bool HasSourceLink => Sources.Any(static doc => doc.HasSourceLink);
+        public bool HasSourceLink => Sources.Any(doc => doc.HasSourceLink);
 
-        public bool AllSourceLink => Sources.All(static doc => doc.HasSourceLink);
+        public bool AllSourceLink => Sources.All(doc => doc.HasSourceLink);
 
         /// <summary>
         /// True if we hae PDB data loaded
@@ -48,7 +53,7 @@ namespace NuGetPe.AssemblyMetadata
 
         public bool SourcesAreDeterministic => _sourcesAreDeterministic.Value;
 
-        private List<string> GetNonEmbeddedSourcesInObjDir()
+        private IReadOnlyList<string> GetNonEmbeddedSourcesInObjDir()
         {
             // get sources where /obj/ is in the name and it's not
             // Document names may use either / or \ a directory separator
@@ -57,7 +62,7 @@ namespace NuGetPe.AssemblyMetadata
                         let path = doc.Name.Replace('\\', '/')
                         where (path.Contains("/obj/", StringComparison.OrdinalIgnoreCase) ||
                                path.Contains("/temp/", StringComparison.OrdinalIgnoreCase) ||
-                               path.Contains("/tmp/", StringComparison.OrdinalIgnoreCase)) && !doc.IsEmbedded
+                               path.Contains("/tmp/", StringComparison.OrdinalIgnoreCase) ) && !doc.IsEmbedded
                         select doc.Name).ToList();
 
             return docs;
@@ -75,15 +80,15 @@ namespace NuGetPe.AssemblyMetadata
                 // we have the min compiler version we can support for this
 
 
-                var versionString = CompilerFlags.Where(static f => f.Key == "version")
-                                           .Select(static f => f.Value)
+                var versionString = CompilerFlags.Where(f => f.Key == "version")
+                                           .Select(f => f.Value)
                                            .FirstOrDefault();
 
                 // if missing, the compiler is too old
                 if (versionString == null)
                     return false;
 
-                if (!int.TryParse(versionString, out var version))
+                if(!int.TryParse(versionString, out var version))
                 {
                     return false; // could not parse version
                 }
@@ -94,7 +99,7 @@ namespace NuGetPe.AssemblyMetadata
 
         private bool CalculateSourcesDeterministic()
         {
-            return Sources.All(static doc => doc.Name.StartsWith("/_", StringComparison.OrdinalIgnoreCase));
+            return Sources.All(doc => doc.Name.StartsWith("/_", StringComparison.OrdinalIgnoreCase));
         }
 
     }

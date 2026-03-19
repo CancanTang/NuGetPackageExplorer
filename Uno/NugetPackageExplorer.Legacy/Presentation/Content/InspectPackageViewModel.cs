@@ -1,12 +1,20 @@
-﻿using System.Net;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reactive.Linq;
+using System.Resources;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGet.Packaging.Signing;
 using NuGet.Versioning;
 
 using NuGetPackageExplorer.Types;
-using NuGetPackageExplorer.Core.Async;
 
 using NuGetPe;
 
@@ -14,38 +22,44 @@ using NupkgExplorer.Client;
 using NupkgExplorer.Framework.Extensions;
 using NupkgExplorer.Framework.Navigation;
 using NupkgExplorer.Presentation.Dialogs;
+using NupkgExplorer.Presentation.Helpers;
 
 using PackageExplorer;
 
 using PackageExplorerViewModel;
 
 using Uno.Disposables;
+using Uno.Extensions;
 using Uno.Logging;
 
+using Windows.ApplicationModel.Core;
+using Windows.Storage;
 using Windows.Storage.Pickers;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 using Constants = NuGetPe.Constants;
 
 namespace NupkgExplorer.Presentation.Content
 {
-    public partial class InspectPackageViewModel : Framework.MVVM.ViewModelBase
+    public class InspectPackageViewModel : Framework.MVVM.ViewModelBase
     {
-        public PackageViewModel? Package
+        public PackageViewModel Package
         {
             get => GetProperty<PackageViewModel>();
             set => SetProperty(value);
         }
-        public IPart? SelectedContent
+        public IPart SelectedContent
         {
             get => GetProperty<IPart>();
             set => SetProperty(value);
         }
-        public IFile? OpenedDocument
+        public IFile OpenedDocument
         {
             get => GetProperty<IFile>();
             set => SetProperty(value);
         }
-        public string? OpenedDocumentLanguage
+        public string OpenedDocumentLanguage
         {
             get => GetProperty<string>();
             set => SetProperty(value);
@@ -64,14 +78,14 @@ namespace NupkgExplorer.Presentation.Content
 
         public InspectPackageViewModel(PackageViewModel package, PackageIdentity? redirectedFrom = null)
         {
-            ArgumentNullException.ThrowIfNull(package);
+            if (package == null) throw new ArgumentNullException(nameof(package));
 
             Title = $"{package.PackageMetadata} | {NuGetPackageExplorer.Constants.AppName}";
             Location = $"/packages/{package.PackageMetadata.Id}/{(redirectedFrom?.Version ?? package.PackageMetadata.Version)}";
             Package = package;
             VersionRedirectWarningMessage = redirectedFrom?.Apply(x => $"The specified version {x.Version} was not found. You have been taken to version {package.PackageMetadata.Version}.");
 
-            this.WhenAnyValue(x => x.SelectedContent!)
+            this.WhenAnyValue(x => x.SelectedContent)
                 .OfType<IFile>()
                 .Subscribe(x =>
                 {
@@ -79,13 +93,15 @@ namespace NupkgExplorer.Presentation.Content
                     Package.SelectedItem = x;
 
                     Package.ViewContentCommand.Execute(x);
+                    OpenedDocumentLanguage = ((package.CurrentFileInfo is { } fi && fi.IsTextFile)
+                        ? MonacoEditorLanguageHelper.MapFileNameToLanguage(fi.Name)
+                        : default
+                    ) ?? "plaintext";
                 });
         }
 
-        public static async Task<InspectPackageViewModel?> CreateFromLocalPackage(StorageFile packageFile)
+        public static async Task<InspectPackageViewModel> CreateFromLocalPackage(StorageFile packageFile)
         {
-            ArgumentNullException.ThrowIfNull(packageFile);
-
             // since the file returned by OpenFilePicker cannot be opened by its path
             // we are copying the file to the browser storage
             var localFolder = ApplicationData.Current.LocalFolder;
@@ -103,7 +119,7 @@ namespace NupkgExplorer.Presentation.Content
 
             return await CreateFromLocalPackage(copy.Path, openOriginal: true);
         }
-        public static async Task<InspectPackageViewModel?> CreateFromLocalPackage(string packagePath, bool openOriginal = false)
+        public static async Task<InspectPackageViewModel> CreateFromLocalPackage(string packagePath, bool openOriginal = false)
         {
             var tempFile = packagePath;
             if (!openOriginal)
@@ -132,24 +148,19 @@ namespace NupkgExplorer.Presentation.Content
             }
             else
             {
-                throw new InvalidOperationException("Unsupported file type: " + extension);
+                throw new InvalidOperationException("Unsupport file type: " + extension);
             }
 
             var factory = DefaultContainer.GetExportedValue<IPackageViewModelFactory>()!;
             var packageVM = await factory.CreateViewModel(package, packagePath, packagePath);
+            var vm = new InspectPackageViewModel(packageVM);
 
-            if (packageVM != null)
-            {
-                var vm = new InspectPackageViewModel(packageVM);
-
-                return vm;
-            }
-            return null;
+            return vm;
         }
 
-        public static async Task<InspectPackageViewModel?> CreateFromRemotePackage(PackageIdentity identity, PackageIdentity? redirectedFrom = null)
+        public static async Task<InspectPackageViewModel> CreateFromRemotePackage(PackageIdentity identity, PackageIdentity? redirectedFrom = null)
         {
-            ArgumentNullException.ThrowIfNull(identity);
+            if (identity == null) throw new ArgumentNullException(nameof(identity));
 
             // TODO: move load cache/download to the caller
             var factory = DefaultContainer.GetExportedValue<IPackageViewModelFactory>()!;
@@ -163,14 +174,9 @@ namespace NupkgExplorer.Presentation.Content
                         typeof(InspectPackageViewModel).Log().Debug("loading package from cache...");
                     }
                     var packageVM = await factory.CreateViewModel(package, package.Source, NuGetConstants.DefaultFeedUrl);
-                    if (packageVM != null)
-                    {
-                        var vm = new InspectPackageViewModel(packageVM, redirectedFrom);
+                    var vm = new InspectPackageViewModel(packageVM, redirectedFrom);
 
-                        return vm;
-                    }
-
-                    return null;
+                    return vm;
                 }
                 catch (Exception e)
                 {
@@ -185,46 +191,42 @@ namespace NupkgExplorer.Presentation.Content
             try
             {
                 var dialog = DefaultContainer.GetExportedValue<DialogService>()!;
-                var cts = new CancellationDisposable();
+                using var cts = new CancellationDisposable();
                 var progressVM = new DownloadProgressDialogViewModel(identity.Id, identity.Version.ToNormalizedString(), cts);
 
-                try
-                {
-                    var dialogTask = dialog.ShowAsync(cts.Token, progressVM);
-                    var downloadPackageTask = DownloadPackage(cts.Token);
-                    var downloadedPackage = await OptionalDialogCoordinator.WaitForResultAsync(downloadPackageTask, dialogTask, cts.Token);
+                var dialogTask = dialog.ShowAsync(cts.Token, progressVM);
+                var downloadPackageTask = DownloadPackage();
 
-                    var packageVM = await factory.CreateViewModel(downloadedPackage, downloadedPackage?.Source, NuGetConstants.DefaultFeedUrl);
-                    if (packageVM == null)
-                    {
-                        throw new InvalidOperationException("Failed to create package view model");
-                    }
+                var completed = await Task.WhenAny(dialogTask, downloadPackageTask);
+                if (completed == downloadPackageTask)
+                {
+                    var packageVM = await factory.CreateViewModel(downloadPackageTask.Result, downloadPackageTask.Result.Source, NuGetConstants.DefaultFeedUrl);
                     var vm = new InspectPackageViewModel(packageVM, redirectedFrom);
 
                     return vm;
                 }
-                finally
+                else
                 {
-                    cts.Dispose();
+                    throw new OperationCanceledException();
                 }
             }
-            catch (AggregateException ae) when (ae.GetPossibleInnerException<HttpRequestException>() is { StatusCode: HttpStatusCode.NotFound })
+            catch (AggregateException ae) when (ae.GetPossibleInnerException<HttpResponseExceptionWithStatusCode>() is { StatusCode: HttpStatusCode.NotFound } e)
             {
                 throw new PackageNotFoundException($"Package '{identity.Id} {identity.Version}' not found");
             }
 
-            Task<ISignaturePackage?> DownloadPackage(CancellationToken cancellationToken)
+            Task<ISignaturePackage?> DownloadPackage()
             {
                 var downloader = DefaultContainer.GetExportedValue<INuGetPackageDownloader>()!;
                 var repository = PackageRepositoryFactory.CreateRepository(NuGetConstants.DefaultFeedUrl);
 
-                return downloader.Download(repository, identity, cancellationToken);
+                return downloader.Download(repository, identity);
             }
         }
 
-        public static async Task<InspectPackageViewModel?> CreateFromRemotePackageWithFallback(PackageIdentity identity)
+        public static async Task<InspectPackageViewModel> CreateFromRemotePackageWithFallback(PackageIdentity identity)
         {
-            ArgumentNullException.ThrowIfNull(identity);
+            if (identity == null) throw new ArgumentNullException(nameof(identity));
 
             try
             {
@@ -256,7 +258,7 @@ namespace NupkgExplorer.Presentation.Content
             {
                 try
                 {
-                    var nuget = DefaultContainer.GetExportedValue<INugetEndpoint>()!;
+                    var nuget = DefaultContainer.GetExportedValue<INugetEndpoint>();
                     var response = await nuget.ListVersions(identity.Id);
                     var version = // prefer stable version over pre-release (containing `-{tag}`) version
                         response.Content.Versions.LastOrDefault(x => !x.Contains('-', StringComparison.InvariantCultureIgnoreCase)) ??
@@ -275,8 +277,8 @@ namespace NupkgExplorer.Presentation.Content
         {
             DiagnosticsClient.TrackEvent("InspectPackage_ViewMetadataSource");
 
-            var manifest = Package?.CreatePackageMetadataFile();
-            SelectedContent = manifest != null ? new PackageFile(manifest, manifest.Name, Package!.RootFolder) : null;
+            var manifest = Package.CreatePackageMetadataFile();
+            SelectedContent = new PackageFile(manifest, manifest.Name, Package.RootFolder);
         }
 
         public async Task DoubleClick()
@@ -308,17 +310,14 @@ namespace NupkgExplorer.Presentation.Content
         public async Task CloseDocument()
         {
             var current = OpenedDocument;
-            OpenedDocument = null!;
+            OpenedDocument = null;
             if (SelectedContent == current)
             {
-                SelectedContent = null!;
+                SelectedContent = null;
             }
 
-            if (Package != null)
-            {
-                Package.ShowContentViewer = false;
-                Package.CurrentFileInfo = null;
-            }
+            Package.ShowContentViewer = false;
+            Package.CurrentFileInfo = null;
 
             await Task.CompletedTask;
         }

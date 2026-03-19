@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using NuGet.Packaging;
-using NuGetPe;
 
 namespace PackageExplorerViewModel
 {
@@ -10,14 +9,17 @@ namespace PackageExplorerViewModel
     {
         public static PackageFolder Convert(List<IPackageFile> paths, PackageViewModel? viewModel)
         {
-            ArgumentNullException.ThrowIfNull(paths);
+            if (paths == null)
+            {
+                throw new ArgumentNullException(nameof(paths));
+            }
 
-            paths.Sort(static (p1, p2) => string.Compare(p1.Path, p2.Path, StringComparison.OrdinalIgnoreCase));
+            paths.Sort((p1, p2) => string.Compare(p1.Path, p2.Path, StringComparison.OrdinalIgnoreCase));
 
             var root = new PackageFolder("", viewModel);
 
             var parsedPaths =
-                paths.Select(p => Tuple.Create(p, PackagePathUtility.NormalizeRelativePath(p.Path).Split('\\'))).ToList();
+                paths.Select(p => Tuple.Create(p, p.Path.Split('\\'))).ToList();
             Parse(root, parsedPaths, 0, 0, parsedPaths.Count);
 
             return root;

@@ -1,4 +1,4 @@
-<Application
+﻿<Application
     x:Class="PackageExplorer.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,10 +7,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Load WinUI resources -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Load Uno.UI.Toolkit resources -->
-                <ToolkitResources xmlns="using:Uno.Toolkit.UI" />
+                
                 <!-- Other merged dictionaries here -->
                 <!--#region Resources imported from Uno.NPE -->
 
@@ -112,23 +110,6 @@
                 <Setter Property="NavigateUri" Value="https://platform.uno/" />
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="HorizontalAlignment" Value="Center" />
-            </Style>
-
-            <Style x:Key="PoweredByVersionHyperlinkButtonStyle"
-                   TargetType="HyperlinkButton">
-                <Setter Property="Foreground" Value="{ThemeResource OnSurfaceThemeBrush38}" />
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="HorizontalAlignment" Value="Center" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="HyperlinkButton">
-                            <TextBlock Text="{TemplateBinding Content}"
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       TextAlignment="Center" />
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
         </ResourceDictionary>
     </Application.Resources>

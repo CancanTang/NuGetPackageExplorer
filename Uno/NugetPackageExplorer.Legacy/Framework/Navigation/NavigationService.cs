@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.Composition;
-
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Text;
 using NupkgExplorer.Framework.MVVM;
 
 using PackageExplorer;
@@ -7,51 +9,42 @@ using PackageExplorer;
 using Uno.Extensions;
 using Uno.Logging;
 
+using Microsoft.UI.Xaml.Controls;
+
 namespace NupkgExplorer.Framework.Navigation
 {
-    public sealed class NavigationEventArgs(Type pageType, ViewModelBase viewModel) : EventArgs
-    {
-        public Type PageType { get; } = pageType;
-        public ViewModelBase ViewModel { get; } = viewModel;
-    }
-
     [Export]
-    public class NavigationService
-    {
-        public event EventHandler<NavigationEventArgs>? Navigated;
+	public class NavigationService
+	{
+		public event EventHandler<(Type PageType, ViewModelBase ViewModel)> Navigated;
 
-        private readonly IDictionary<Type, Type> _mapping = new Dictionary<Type, Type>();
+		private readonly IDictionary<Type, Type> _mapping = new Dictionary<Type, Type>();
 
-        public NavigationService()
-        {
-        }
+		public NavigationService()
+		{
+		}
 
-        public void Register<TPage, TViewModel>()
-            where TPage : Page, new()
-            where TViewModel : ViewModelBase
-        {
-            _mapping.Add(typeof(TViewModel), typeof(TPage));
-        }
+		public void Register<TPage, TViewModel>()
+			where TPage: Page, new()
+			where TViewModel: ViewModelBase
+		{
+			_mapping.Add(typeof(TViewModel), typeof(TPage));
+		}
 
 
-        public void NavigateTo<TViewModel>()
-            where TViewModel : ViewModelBase, new()
+		public void NavigateTo<TViewModel>()
+			where TViewModel : ViewModelBase, new()
         {
             NavigateToCore(new TViewModel());
         }
 
-        public void NavigateTo<TViewModel>(TViewModel viewModel)
-            where TViewModel : ViewModelBase
+		public void NavigateTo<TViewModel>(TViewModel viewModel)
+			where TViewModel: ViewModelBase
         {
-            ArgumentNullException.ThrowIfNull(viewModel);
             NavigateToCore(viewModel);
         }
 
-        public void NavigateTo(ViewModelBase viewModel)
-        {
-            ArgumentNullException.ThrowIfNull(viewModel);
-            NavigateToCore(viewModel);
-        }
+        public void NavigateTo(ViewModelBase viewModel) => NavigateToCore(viewModel);
 
         private void NavigateToCore(ViewModelBase viewModel)
         {
@@ -61,10 +54,10 @@ namespace NupkgExplorer.Framework.Navigation
                 {
                     throw new InvalidOperationException($"There is no page associated with '{viewModel.GetType().Name}'.");
                 }
-
+            
                 App.Current.Container.SatisfyImportsOnce(viewModel);
-
-                Navigated?.Invoke(this, new NavigationEventArgs(pageType, viewModel));
+            
+                Navigated?.Invoke(this, (pageType, viewModel));
             }
             catch (Exception e)
             {
@@ -72,5 +65,5 @@ namespace NupkgExplorer.Framework.Navigation
                 throw;
             }
         }
-    }
+	}
 }

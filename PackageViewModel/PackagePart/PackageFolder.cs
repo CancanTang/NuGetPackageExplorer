@@ -100,7 +100,7 @@ namespace PackageExplorerViewModel
 
         public override IEnumerable<IFile> GetFiles()
         {
-            return Children.Count == 0 ? Array.Empty<IFile>() : Children.SelectMany(static p => p.GetFiles());
+            return Children.Count == 0 ? Array.Empty<IFile>() : Children.SelectMany(p => p.GetFiles());
         }
 
         public override IEnumerable<IPackageFile> GetPackageFiles()
@@ -119,18 +119,21 @@ namespace PackageExplorerViewModel
             }
             else
             {
-                return Children.SelectMany(static p => p.GetPackageFiles());
+                return Children.SelectMany(p => p.GetPackageFiles());
             }
         }
 
         public override IEnumerable<PackagePart> GetPackageParts()
         {
-            return new PackagePart[] { this }.Concat(Children.SelectMany(static p => p.GetPackageParts()));
+            return new PackagePart[] { this }.Concat(Children.SelectMany(p => p.GetPackageParts()));
         }
 
         public void RemoveChild(PackagePart child)
         {
-            ArgumentNullException.ThrowIfNull(child);
+            if (child == null)
+            {
+                throw new ArgumentNullException(nameof(child));
+            }
 
             var removed = Children.Remove(child);
             if (removed)
@@ -159,11 +162,6 @@ namespace PackageExplorerViewModel
         private bool AddContentFolderCanExecute(string folderName)
         {
             if (folderName == null)
-            {
-                return false;
-            }
-
-            if (!IsSafePathSegment(folderName))
             {
                 return false;
             }
@@ -224,7 +222,8 @@ namespace PackageExplorerViewModel
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "<Pending>")]
         public void AddFolder(PackageFolder childFolder, bool makeCopy = false)
         {
-            ArgumentNullException.ThrowIfNull(childFolder);
+            if (childFolder is null)
+                throw new ArgumentNullException(nameof(childFolder));
             if (!AddContentFolderCanExecute(childFolder.Name))
             {
                 PackageViewModel?.UIServices.Show(
@@ -330,7 +329,10 @@ namespace PackageExplorerViewModel
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "<Pending>")]
         public void AddFile(PackageFile file, bool makeCopy = false)
         {
-            ArgumentNullException.ThrowIfNull(file);
+            if (file == null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
 
             if (Contains(file))
             {
@@ -448,9 +450,7 @@ namespace PackageExplorerViewModel
 
         public override void Export(string rootPath)
         {
-            var fullPath = string.IsNullOrEmpty(Path)
-                ? global::System.IO.Path.GetFullPath(rootPath)
-                : PackagePathUtility.ResolvePathUnderRoot(rootPath, Path);
+            var fullPath = System.IO.Path.Combine(rootPath, Path);
             if (!Directory.Exists(fullPath))
             {
                 Directory.CreateDirectory(fullPath);

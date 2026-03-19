@@ -1,16 +1,16 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
-
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using PackageType = NuGet.Packaging.Core.PackageType;
 
 namespace PackageExplorerViewModel
@@ -49,7 +49,8 @@ namespace PackageExplorerViewModel
 
         public EditablePackageMetadata(IPackageMetadata source, IUIServices uiServices, PackageViewModel packageViewModel)
         {
-            ArgumentNullException.ThrowIfNull(source);
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
             _uiServices = uiServices;
             _showValidationResultsCommand = new RelayCommand(OnShowValidationResult, () => ValidationResult != null);
 
@@ -78,7 +79,7 @@ namespace PackageExplorerViewModel
             ContentFiles = new ObservableCollection<ManifestContentFiles>(source.ContentFiles);
             _frameworkReferenceGroups = new ObservableCollection<FrameworkReferenceGroup>(source.FrameworkReferenceGroups);
 
-            if (source.Repository != null)
+            if(source.Repository != null)
             {
                 Repository = new RepositoryMetadataViewModel(source.Repository);
                 _underlyingRepository = source.Repository;
@@ -108,9 +109,8 @@ namespace PackageExplorerViewModel
 
         public async void LoadSignatureData(ISignaturePackage package)
         {
-            ArgumentNullException.ThrowIfNull(package);
-            if (!AppCompat.IsSupported(RuntimeFeature.Cryptography)) return;
-
+            if (package is null)
+                throw new ArgumentNullException(nameof(package));
             if (package.IsSigned)
             {
                 PublisherSignature = package.PublisherSignature;
@@ -133,7 +133,7 @@ namespace PackageExplorerViewModel
             get { return _authors; }
             set
             {
-                if (string.IsNullOrWhiteSpace(value) && !PackageTypes.Any(static pt => string.Equals(pt.Name, "SymbolsPackage", StringComparison.OrdinalIgnoreCase)))
+                if (string.IsNullOrWhiteSpace(value) && !PackageTypes.Any(pt => string.Equals(pt.Name, "SymbolsPackage", StringComparison.OrdinalIgnoreCase)))
                 {
                     const string message = "Authors is required.";
                     SetError("Authors", message);
@@ -675,7 +675,7 @@ namespace PackageExplorerViewModel
 
         private static IEnumerable<string> SplitString(string? text)
         {
-            return text == null ? Enumerable.Empty<string>() : text.Split(',').Select(static a => a.Trim());
+            return text == null ? Enumerable.Empty<string>() : text.Split(',').Select(a => a.Trim());
         }
 
         private static string ConvertToString(IEnumerable<string> items)

@@ -12,7 +12,7 @@ namespace NuGetPe
                 try
                 {
                     using var configStream = fileSystem.OpenFile(path);
-                    return SecureXmlLoader.Load(configStream);
+                    return XDocument.Load(configStream);
                 }
                 catch (Exception)
                 {

@@ -1,13 +1,19 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Linq;
-
-using Microsoft.UI.Xaml.Data;
+using System.Text;
+using System.Windows.Input;
 
 using NupkgExplorer.Views.Helpers;
 
 using Uno.Disposables;
 using Uno.Extensions;
 using Uno.Logging;
+
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 
 namespace NupkgExplorer.Views.Extensions
 {
@@ -26,17 +32,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(ListViewExtensions),
             new PropertyMetadata(default(bool), (d, e) => d.Maybe<ListView>(control => OnAddIncrementallyLoadingSupportChanged(control, e))));
 
-        public static bool GetAddIncrementallyLoadingSupport(ListView obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (bool)obj.GetValue(AddIncrementallyLoadingSupportProperty);
-        }
-
-        public static void SetAddIncrementallyLoadingSupport(ListView obj, bool value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(AddIncrementallyLoadingSupportProperty, value);
-        }
+        public static bool GetAddIncrementallyLoadingSupport(ListView obj) => (bool)obj.GetValue(AddIncrementallyLoadingSupportProperty);
+        public static void SetAddIncrementallyLoadingSupport(ListView obj, bool value) => obj.SetValue(AddIncrementallyLoadingSupportProperty, value);
 
         #endregion
         #region DependencyProperty: IsIncrementallyLoading
@@ -59,17 +56,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(ListViewExtensions),
             new PropertyMetadata(default(ICommand), (d, e) => d.Maybe<ListView>(control => OnDoubleClickCommandChanged(control, e))));
 
-        public static ICommand GetDoubleClickCommand(ListView obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (ICommand)obj.GetValue(DoubleClickCommandProperty);
-        }
-
-        public static void SetDoubleClickCommand(ListView obj, ICommand value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(DoubleClickCommandProperty, value);
-        }
+        public static ICommand GetDoubleClickCommand(ListView obj) => (ICommand)obj.GetValue(DoubleClickCommandProperty);
+        public static void SetDoubleClickCommand(ListView obj, ICommand value) => obj.SetValue(DoubleClickCommandProperty, value);
 
         #endregion
         #region DependencyProperty: DoubleClickCommandDisposable
@@ -80,17 +68,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(ListViewExtensions),
             new PropertyMetadata(default(IDisposable)));
 
-        public static IDisposable GetDoubleClickCommandDisposable(ListView obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (IDisposable)obj.GetValue(DoubleClickCommandDisposableProperty);
-        }
-
-        public static void SetDoubleClickCommandDisposable(ListView obj, IDisposable value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(DoubleClickCommandDisposableProperty, value);
-        }
+        public static IDisposable GetDoubleClickCommandDisposable(ListView obj) => (IDisposable)obj.GetValue(DoubleClickCommandDisposableProperty);
+        public static void SetDoubleClickCommandDisposable(ListView obj, IDisposable value) => obj.SetValue(DoubleClickCommandDisposableProperty, value);
 
         #endregion
 
@@ -165,7 +144,6 @@ namespace NupkgExplorer.Views.Extensions
         {
             var lv = (ListView)sender;
             var sv = VisualTreeHelperEx.GetFirstDescendant<ScrollViewer>(lv);
-            if (sv == null) return;
 
             sv.ViewChanged += async (s, e) =>
             {

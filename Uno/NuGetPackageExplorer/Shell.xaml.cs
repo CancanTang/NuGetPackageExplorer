@@ -1,4 +1,8 @@
-﻿using System.ComponentModel.Composition;
+﻿using System;
+using System.ComponentModel.Composition;
+using System.IO;
+
+using NuGetPackageExplorer.Types;
 
 using NuGetPe;
 
@@ -6,6 +10,8 @@ using NupkgExplorer.Framework.Navigation;
 using NupkgExplorer.Presentation.Content;
 
 using Windows.Storage.Pickers;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -16,25 +22,25 @@ namespace PackageExplorer
     /// </summary>
     [Export]
     public sealed partial class Shell : Page
-    {
+	{
         [Import]
-        public NavigationService NavigationService { get; set; } = null!;
+        public NavigationService NavigationService { get; set; }
 
-        public Shell()
-        {
-            InitializeComponent();
-        }
+		public Shell()
+		{
+			InitializeComponent();
+		}
 
         public Frame GetContentFrame() => ContentFrame;
 
-        private void ToggleDarkLightTheme(object sender, RoutedEventArgs e)
-        {
+		private void ToggleDarkLightTheme(object sender, RoutedEventArgs e)
+		{
 #if WINDOWS_UWP
 			RequestedTheme = RequestedTheme == ElementTheme.Dark
 				? ElementTheme.Light
 				: ElementTheme.Dark;
 #endif
-        }
+		}
 
         private async void OpenLocalPackage(object sender, RoutedEventArgs e)
         {
@@ -48,8 +54,8 @@ namespace PackageExplorer
             if (file != null)
             {
                 var vm = await InspectPackageViewModel.CreateFromLocalPackage(file);
-                if (vm != null)
-                    NavigationService.NavigateTo(vm);
+
+                NavigationService.NavigateTo(vm);
             }
         }
 
@@ -62,5 +68,5 @@ namespace PackageExplorer
         {
             NavigationService.NavigateTo<FeedPackagePickerViewModel>();
         }
-    }
+	}
 }

@@ -3,18 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Microsoft.UI;
-using Microsoft.UI.Xaml;
-
 using Monaco;
-
-using NupkgExplorer.Presentation.Helpers;
 
 using Uno.Disposables;
 using Uno.Extensions;
 
 using Windows.UI;
 using Windows.UI.ViewManagement;
+using Microsoft.UI.Xaml;
+using Microsoft.UI;
 
 namespace NupkgExplorer.Views.Extensions
 {
@@ -35,41 +32,34 @@ namespace NupkgExplorer.Views.Extensions
             typeof(CodeEditorExtensions),
             new PropertyMetadata(default(bool), (d, e) => d.Maybe<CodeEditor>(control => OnAutoLayoutOnResizeChanged(control, e))));
 
-        public static bool GetAutoLayoutOnResize(CodeEditor obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (bool)obj.GetValue(AutoLayoutOnResizeProperty);
-        }
-
-        public static void SetAutoLayoutOnResize(CodeEditor obj, bool value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(AutoLayoutOnResizeProperty, value);
-        }
+        public static bool GetAutoLayoutOnResize(CodeEditor obj) => (bool)obj.GetValue(AutoLayoutOnResizeProperty);
+        public static void SetAutoLayoutOnResize(CodeEditor obj, bool value) => obj.SetValue(AutoLayoutOnResizeProperty, value);
 
         #endregion
         #region DependencyProperty: CodeLanguage
 
-        public static DependencyProperty FileExtensionProperty { get; } = DependencyProperty.RegisterAttached(
-            "FileExtension",
+        public static DependencyProperty CodeLanguageProperty { get; } = DependencyProperty.RegisterAttached(
+            "CodeLanguage",
             typeof(string),
             typeof(CodeEditorExtensions),
-            new PropertyMetadata(default(string), (d, e) => d.Maybe<CodeEditor>(control => OnFileExtensionPropertyChanged(control, e))));
+            new PropertyMetadata(default(string), (d, e) => d.Maybe<CodeEditor>(control => OnCodeLanguageChanged(control, e))));
 
-        public static string GetFileExtension(CodeEditor obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (string)obj.GetValue(FileExtensionProperty);
-        }
-
-        public static void SetFileExtension(CodeEditor obj, string value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(FileExtensionProperty, value);
-        }
+        public static string GetCodeLanguage(CodeEditor obj) => (string)obj.GetValue(CodeLanguageProperty);
+        public static void SetCodeLanguage(CodeEditor obj, string value) => obj.SetValue(CodeLanguageProperty, value);
 
         #endregion
+        #region DependencyProperty: ModelLanguage
 
+        public static DependencyProperty ModelLanguageProperty { get; } = DependencyProperty.RegisterAttached(
+            "ModelLanguage",
+            typeof(string),
+            typeof(CodeEditorExtensions),
+            new PropertyMetadata(default(string), (d, e) => d.Maybe<CodeEditor>(control => OnModelLanguageChanged(control, e))));
+
+        //public static string GetModelLanguage(CodeEditor obj) => (string)obj.GetValue(ModelLanguageProperty);
+        public static void SetModelLanguage(CodeEditor obj, string value) => obj.SetValue(ModelLanguageProperty, value);
+
+        #endregion
         #region DependencyProperty: AutoUpdateTheme
 
         public static DependencyProperty AutoUpdateThemeProperty { get; } = DependencyProperty.RegisterAttached(
@@ -78,17 +68,8 @@ namespace NupkgExplorer.Views.Extensions
             typeof(CodeEditorExtensions),
             new PropertyMetadata(default(bool), (d, e) => d.Maybe<CodeEditor>(control => OnAutoUpdateThemeChanged(control, e))));
 
-        public static bool GetAutoUpdateTheme(CodeEditor obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (bool)obj.GetValue(AutoUpdateThemeProperty);
-        }
-
-        public static void SetAutoUpdateTheme(CodeEditor obj, bool value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(AutoUpdateThemeProperty, value);
-        }
+        public static bool GetAutoUpdateTheme(CodeEditor obj) => (bool)obj.GetValue(AutoUpdateThemeProperty);
+        public static void SetAutoUpdateTheme(CodeEditor obj, bool value) => obj.SetValue(AutoUpdateThemeProperty, value);
 
         #endregion
         #region DependencyProperty: AutoUpdateThemeSubscription
@@ -99,21 +80,12 @@ namespace NupkgExplorer.Views.Extensions
             typeof(CodeEditorExtensions),
             new PropertyMetadata(default(IDisposable)));
 
-        public static IDisposable GetAutoUpdateThemeSubscription(CodeEditor obj)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            return (IDisposable)obj.GetValue(AutoUpdateThemeSubscriptionProperty);
-        }
-
-        public static void SetAutoUpdateThemeSubscription(CodeEditor obj, IDisposable value)
-        {
-            ArgumentNullException.ThrowIfNull(obj);
-            obj.SetValue(AutoUpdateThemeSubscriptionProperty, value);
-        }
+        public static IDisposable GetAutoUpdateThemeSubscription(CodeEditor obj) => (IDisposable)obj.GetValue(AutoUpdateThemeSubscriptionProperty);
+        public static void SetAutoUpdateThemeSubscription(CodeEditor obj, IDisposable value) => obj.SetValue(AutoUpdateThemeSubscriptionProperty, value);
 
         #endregion
 
-        private static readonly UISettings UiSettings = new();
+        private static readonly UISettings _uiSettings = new UISettings();
 
         private static void OnAutoLayoutOnResizeChanged(CodeEditor control, DependencyPropertyChangedEventArgs e)
         {
@@ -123,30 +95,31 @@ namespace NupkgExplorer.Views.Extensions
                 control.SizeChanged += ForceLayout;
             }
 
-            static async void ForceLayout(object sender, SizeChangedEventArgs args)
+            void ForceLayout(object sender, SizeChangedEventArgs args)
             {
                 if (sender is CodeEditor editor)
                 {
                     // force layout on SizeChanged, or otherwise
                     // the editor would be stuck at minimal size when its visibility is toggled
-
-
-                    //editor.ExecuteJavascript("editor.layout();");
-                    await editor.InvokeScriptAsync("editor.layout();");
+                    editor.ExecuteJavascript("editor.layout();");
                 }
             }
         }
 
-        private static async void OnFileExtensionPropertyChanged(CodeEditor control, DependencyPropertyChangedEventArgs e)
+        private static void OnCodeLanguageChanged(CodeEditor control, DependencyPropertyChangedEventArgs e)
         {
-            var ext = e.NewValue as string ?? string.Empty;
+            var language = e.NewValue as string ?? "plaintext";
 
-            // Check our list first as we define some custom mappings
-            var language = MonacoEditorLanguageHelper.MapFileNameToLanguage(ext);
-
-            language ??= control.Languages.GetCodeLanguageFromExtension(ext);
-
+            // CodeEditor::CodeLanguageProperty is internal...
             control.CodeLanguage = language;
+        }
+        private static void OnModelLanguageChanged(CodeEditor control, DependencyPropertyChangedEventArgs e)
+        {
+            var language = e.NewValue as string ?? "plaintext";
+
+            // CodeLanguage doesn't work when the control is loading/first loaded
+            // calling its underlying method to ensure the language is actually set
+            control.ExecuteJavascript($"monaco.editor.setModelLanguage(model, '{language}');");
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Intended to be dispose on next call")]
@@ -155,18 +128,18 @@ namespace NupkgExplorer.Views.Extensions
             GetAutoUpdateThemeSubscription(control)?.Dispose();
             if (e.NewValue is bool value && value)
             {
-                UiSettings.ColorValuesChanged += OnColorValuesChanged;
+                _uiSettings.ColorValuesChanged += OnColorValuesChanged;
 
                 // force an initial update
-                OnColorValuesChanged(UiSettings, null!);
+                OnColorValuesChanged(_uiSettings, null!);
 
                 SetAutoUpdateThemeSubscription(control, Disposable.Create(() =>
-                    UiSettings.ColorValuesChanged -= OnColorValuesChanged
+                    _uiSettings.ColorValuesChanged -= OnColorValuesChanged
                 ));
 
                 void OnColorValuesChanged(UISettings sender, object args)
                 {
-                    control.RequestedTheme = (Window.Current!.Content as FrameworkElement)?.ActualTheme switch
+                    control.RequestedTheme = (Window.Current.Content as FrameworkElement)?.ActualTheme switch
                     {
                         ElementTheme actualTheme when (actualTheme != ElementTheme.Default) => actualTheme,
                         _ => sender.GetColorValue(UIColorType.Background) == Colors.Black

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
-
 using ComIDataObject = System.Runtime.InteropServices.ComTypes.IDataObject;
 using WindowsIDataObject = System.Windows.IDataObject;
 
@@ -181,7 +180,7 @@ namespace PackageExplorer
             return null;
         }
 
-        private sealed class IStreamWrapper : Stream
+        private class IStreamWrapper : Stream
         {
             private readonly IStream _inner;
             private System.Runtime.InteropServices.ComTypes.STATSTG? _stats;

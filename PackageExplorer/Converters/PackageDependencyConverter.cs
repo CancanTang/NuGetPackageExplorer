@@ -16,7 +16,7 @@ namespace PackageExplorer
 {
     public class PackageDependencyConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             if (value == null)
             {
@@ -28,7 +28,7 @@ namespace PackageExplorer
             return $"{dependency.Id} {ManifestUtility.ReplaceMetadataWithToken(dependency.VersionRange.PrettyPrint())}";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo language)
+        public object ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             throw new NotImplementedException();
         }

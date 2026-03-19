@@ -81,13 +81,13 @@ namespace NupkgExplorer.Controls
                 desiredSize.Height + borderAndPaddingSize.Height);
         }
 
-        protected override Size ArrangeOverride(Size finalSize)
+        protected override Size ArrangeOverride(Size arrangeSize)
         {
             var borderAndPaddingSize = BorderAndPaddingSize;
             //arrangeSize = arrangeSize.Subtract(borderAndPaddingSize);
-            var arrangeSize = new Size(
-                finalSize.Width - borderAndPaddingSize.Width,
-                finalSize.Height - borderAndPaddingSize.Height);
+            arrangeSize = new Size(
+                arrangeSize.Width - borderAndPaddingSize.Width,
+                arrangeSize.Height - borderAndPaddingSize.Height);
 
             var childRectangle = new Rect(BorderThickness.Left + Padding.Left, BorderThickness.Top + Padding.Top, arrangeSize.Width, arrangeSize.Height);
 

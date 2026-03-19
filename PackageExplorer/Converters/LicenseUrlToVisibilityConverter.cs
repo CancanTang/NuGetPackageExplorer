@@ -1,4 +1,6 @@
-﻿using NuGet.Packaging;
+﻿using System;
+using System.Text;
+using NuGet.Packaging;
 
 #if HAS_UNO || USE_WINUI
 using Microsoft.UI.Xaml;
@@ -17,9 +19,9 @@ namespace PackageExplorer
 #if !HAS_UNO && !USE_WINUI
     [ValueConversion(typeof(Uri), typeof(Visibility))]
 #endif
-    public partial class LicenseUrlToVisibilityConverter : IValueConverter
+    public class LicenseUrlToVisibilityConverter : IValueConverter
     {
-        public object? Convert(object value, Type targetType, object parameter, _CultureInfo language)
+        public object? Convert(object value, Type targetType, object parameter, _CultureInfo culture)
         {
             if (value is Uri licenseUrl)
             {
@@ -30,6 +32,6 @@ namespace PackageExplorer
             return Visibility.Collapsed;
         }
 
-        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo language) => throw new NotSupportedException("Only one-way conversion is supported.");
+        public object? ConvertBack(object value, Type targetType, object parameter, _CultureInfo culture) => throw new NotSupportedException("Only one-way conversion is supported.");
     }
 }

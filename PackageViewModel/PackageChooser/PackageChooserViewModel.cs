@@ -1,15 +1,15 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
-
 using NuGet.Packaging;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
-
 using NuGetPackageExplorer.Types;
-
 using NuGetPe;
-
 using PackageExplorerViewModel.PackageSearch;
 
 namespace PackageExplorerViewModel
@@ -18,7 +18,7 @@ namespace PackageExplorerViewModel
     {
         private const int PackageListPageSize = 15;
 
-        private ShowLatestVersionQueryContext<IPackageSearchMetadata>? _currentQuery;
+        private IQueryContext<IPackageSearchMetadata>? _currentQuery;
         private string? _currentSearch;
         private FeedType _feedType;
         private MruPackageSourceManager? _packageSourceManager;
@@ -214,9 +214,9 @@ namespace PackageExplorerViewModel
         public ICommand ChangePackageSourceCommand { get; private set; }
         public RelayCommand CancelCommand { get; private set; }
 
-        public event EventHandler LoadPackagesCompleted = static delegate { };
-        public event EventHandler OpenPackageRequested = static delegate { };
-        public event EventHandler PackageDownloadRequested = static delegate { };
+        public event EventHandler LoadPackagesCompleted = delegate { };
+        public event EventHandler OpenPackageRequested = delegate { };
+        public event EventHandler PackageDownloadRequested = delegate { };
 
         private readonly PackageListCache<IPackageSearchMetadata> _packageListCache = new PackageListCache<IPackageSearchMetadata>();
 
@@ -459,7 +459,7 @@ namespace PackageExplorerViewModel
 
         private void CheckDisposed()
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(PackageChooserViewModel));
+            if (_disposed) throw new ObjectDisposedException(nameof(PackageChooserViewModel));
         }
     }
 }
